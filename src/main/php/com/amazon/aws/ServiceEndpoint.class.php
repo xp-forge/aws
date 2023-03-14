@@ -9,9 +9,10 @@ use util\log\Traceable;
  *
  * @see   https://docs.aws.amazon.com/general/latest/gr/rande.html
  * @test  com.amazon.aws.unittest.ServiceEndpointTest
+ * @test  com.amazon.aws.unittest.RequestTest
  */
 class ServiceEndpoint implements Traceable {
-  private $service, $credentials;
+  private $service, $credentials, $connections;
   private $region= null;
   private $cat= null;
 
@@ -30,6 +31,7 @@ class ServiceEndpoint implements Traceable {
       php_uname('r'),
       PHP_VERSION
     ));
+    $this->connections= function($uri) { return new HttpConnection($uri); };
   }
 
   /** Sets region code */
@@ -64,6 +66,18 @@ class ServiceEndpoint implements Traceable {
   }
 
   /**
+   * Specify a connection function, which gets passed a URI and returns a
+   * `HttpConnection` instance.
+   *
+   * @param  function(var): peer.http.HttpConnection $connections
+   * @return self
+   */
+  public function connecting($connections) {
+    $this->connections= cast($connections, 'function(var): peer.http.HttpConnection');
+    return $this;
+  }
+
+  /**
    * Returns a new resource consisting of path including
    * optional placeholders and replacement segments.
    * 
@@ -88,7 +102,7 @@ class ServiceEndpoint implements Traceable {
     if ('/' !== ($target[0] ?? '')) $target= '/'.$target;
 
     // Create and sign request
-    $conn= new HttpConnection('https://'.$host.$target);
+    $conn= ($this->connections)('https://'.$host.$target);
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
     $request->setTarget($target);
