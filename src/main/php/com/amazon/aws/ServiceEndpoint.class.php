@@ -1,15 +1,14 @@
 <?php namespace com\amazon\aws;
 
 use com\amazon\aws\api\{Resource, Response, SignatureV4};
-use peer\URL;
 use peer\http\{HttpConnection, HttpRequest};
-use util\URI;
 use util\log\Traceable;
 
 /**
  * AWS service endpoint
  *
  * @see   https://docs.aws.amazon.com/general/latest/gr/rande.html
+ * @test  com.amazon.aws.unittest.ServiceEndpointTest
  */
 class ServiceEndpoint implements Traceable {
   private $service, $credentials;
@@ -36,6 +35,12 @@ class ServiceEndpoint implements Traceable {
   /** Sets region code */
   public function in(string $region): self {
     $this->region= $region;
+    return $this;
+  }
+
+  /** Sets global region */
+  public function global(): self {
+    $this->region= null;
     return $this;
   }
 
