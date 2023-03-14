@@ -1,0 +1,6 @@
+AWS Core change log
+===================
+
+## ?.?.? / ????-??-??
+
+* Hello World! First release - @thekid
