@@ -23,7 +23,7 @@ class TestConnection extends HttpConnection {
   }
 
   public function send(HttpRequest $request) {
-    $target= $request->target();
+    $target= rawurldecode($request->target());
     return new HttpResponse(new MemoryInputStream(implode(
       "\r\n",
       $this->responses[$target] ?? $this->error($target)
