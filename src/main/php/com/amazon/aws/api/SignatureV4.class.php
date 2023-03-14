@@ -6,6 +6,7 @@ use peer\http\HttpRequest;
 /**
  * Signing AWS API requests, version 4
  *
+ * @test com.amazon.aws.unittest.SignatureV4Test
  * @see  https://docs.aws.amazon.com/general/latest/gr/create-signed-request.html
  */
 class SignatureV4 {
