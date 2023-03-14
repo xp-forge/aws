@@ -5,17 +5,28 @@ use lang\{Value, IllegalStateException};
 use text\json\{Json, StreamInput};
 use util\{Comparison, Objects};
 
+/** @test com.amazon.aws.unittest.ResponseTest */
 class Response implements Value {
   use Comparison;
 
-  private $status, $message, $headers, $stream;
+  private $status, $message, $stream;
+  private $headers= [], $lookup= [];
 
   /** Creates a new response */
   public function __construct(int $status, string $message, array $headers, InputStream $stream) {
     $this->status= $status;
     $this->message= $message;
-    $this->headers= $headers;
     $this->stream= $stream;
+
+    foreach ($headers as $name => $value) {
+      $lookup= strtolower($name);
+      if (isset($this->lookup[$lookup])) {
+        $this->headers[$this->lookup[$lookup]][]= $value;
+      } else {
+        $this->headers[$name]= (array)$value;
+        $this->lookup[$lookup]= $name;
+      }
+    }
   }
 
   /** @return int */
@@ -24,8 +35,29 @@ class Response implements Value {
   /** @return string */
   public function message() { return $this->message; }
 
-  /** @return [:string[]] */
-  public function headers() { return $this->headers; }
+  /**
+   * Gets a header by name. Performs a case-insensitive lookup.
+   *
+   * @param  string $name
+   * @param  var $default
+   * @return var
+   */
+  public function header($name, $default= null) {
+    $lookup= strtolower($name);
+    return isset($this->lookup[$lookup])
+      ? implode(', ', $this->headers[$this->lookup[$lookup]])
+      : $default
+    ;
+  }
+
+  /** @return [:string|string[]] */
+  public function headers() {
+    $r= [];
+    foreach ($this->headers as $name => $header) {
+      $r[$name]= 1 === sizeof($header) ? $header[0] : $header;
+    }
+    return $r;
+  }
 
   /** @return io.streams.InputStream */
   public function stream() { return $this->stream; }

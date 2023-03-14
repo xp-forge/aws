@@ -31,7 +31,7 @@ class RequestTest {
 
     Assert::equals(200, $response->status());
     Assert::equals('OK', $response->message());
-    Assert::equals(['Content-Type' => ['text/plain']], $response->headers());
+    Assert::equals(['Content-Type' => 'text/plain'], $response->headers());
     Assert::equals('Testing local', $response->content());
   }
 
@@ -41,7 +41,7 @@ class RequestTest {
 
     Assert::equals(404, $response->status());
     Assert::equals('Not found', $response->message());
-    Assert::equals(['Content-Type' => ['text/plain'], 'Content-Length' => ['20']], $response->headers());
+    Assert::equals(['Content-Type' => 'text/plain', 'Content-Length' => '20'], $response->headers());
     Assert::equals('File /gone not found', $response->content());
   }
 
