@@ -80,7 +80,7 @@ class SignatureV4 {
       $this->credentials->accessKey(),
       $credentialScope,
       $headerList,
-      hash_hmac(self::HASH, $toSign, $signingHash),
+      hash_hmac(self::HASH, $toSign, $signingHash)
     )];
   }
 }
