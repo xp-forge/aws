@@ -12,7 +12,7 @@ use util\log\Traceable;
  * @test  com.amazon.aws.unittest.RequestTest
  */
 class ServiceEndpoint implements Traceable {
-  private $service, $credentials, $connections;
+  private $service, $credentials, $signature, $connections;
   private $region= null;
   private $cat= null;
   private $base= '/';
