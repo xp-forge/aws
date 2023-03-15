@@ -3,6 +3,9 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.0.0 / 2023-03-15
+
+* Fixed *Creation of dynamic property ... is deprecated* errors - @thekid
 * Merged PR #2: Add `ServiceEndpoint::using()` to change the domain or the
   domain prefix for the endpoint
   (@thekid)
