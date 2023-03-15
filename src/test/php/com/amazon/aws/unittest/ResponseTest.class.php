@@ -6,7 +6,7 @@ use test\{Assert, Expect, Test, Values};
 use lang\IllegalStateException;
 
 class ResponseTest {
-  const STATUS= [200 => 'OK', 404 => 'Not found'];
+  const STATUS= [200 => 'OK', 204 => 'No content', 404 => 'Not found'];
 
   /** Creates an HTTP response */
   private function response(int $status= 200, string $content= '', string $type= null): Response {
@@ -66,5 +66,15 @@ class ResponseTest {
   #[Test]
   public function access_error() {
     Assert::equals('File not found', $this->response(404, 'File not found', 'text/plain')->error());
+  }
+
+  #[Test, Expect(class: IllegalStateException::class, message: '200 OK does not indicate an error response')]
+  public function cannot_access_result_as_error() {
+    $this->response(200, 'Test', 'text/plain')->error();
+  }
+
+  #[Test, Expect(class: IllegalStateException::class, message: 'Cannot deserialize without content type')]
+  public function cannot_deserialize_result_without_content_type() {
+    $this->response(204)->result();
   }
 }
