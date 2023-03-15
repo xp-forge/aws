@@ -46,7 +46,7 @@ class RequestTest {
   }
 
   #[Test]
-  public function text_result() {
+  public function text_value() {
     $endpoint= $this->endpoint('lambda', [
       '/2015-03-31/functions/test/invocations' => [
         'HTTP/1.1 200 OK',
@@ -59,12 +59,12 @@ class RequestTest {
     Assert::equals('Testing local', $endpoint
       ->resource('/2015-03-31/functions/{name}/invocations', ['name' => 'test'])
       ->transmit(['source' => 'local'])
-      ->result()
+      ->value()
     );
   }
 
   #[Test]
-  public function json_result() {
+  public function json_value() {
     $endpoint= $this->endpoint('apigateway', [
       '/$default' => [
         'HTTP/1.1 200 OK',
@@ -77,16 +77,16 @@ class RequestTest {
     Assert::equals(['statusCode' => 200], $endpoint
       ->resource('/{stage}', ['stage' => '$default'])
       ->transmit(['requestContext' => ['http' => [/* shortened for brevity */]]])
-      ->result()
+      ->value()
     );
   }
 
   #[Test]
-  public function error() {
+  public function error_value() {
     Assert::equals('File /gone not found', $this->endpoint('testing', [])
       ->resource('/gone')
       ->transmit([])
-      ->error()
+      ->value()
     );
   }
 }
