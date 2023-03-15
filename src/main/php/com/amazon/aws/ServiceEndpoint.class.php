@@ -15,6 +15,7 @@ class ServiceEndpoint implements Traceable {
   private $service, $credentials, $connections;
   private $region= null;
   private $cat= null;
+  private $base= '/';
 
   /**
    * Creates a new AWS endpoint
@@ -43,6 +44,12 @@ class ServiceEndpoint implements Traceable {
   /** Sets global region */
   public function global(): self {
     $this->region= null;
+    return $this;
+  }
+
+  /** Sets version to use */
+  public function version(string $version): self {
+    $this->base= "/{$version}/";
     return $this;
   }
 
@@ -98,11 +105,11 @@ class ServiceEndpoint implements Traceable {
       : "{$this->service}.{$this->region}.amazonaws.com"
     ;
 
-    // Ensure target path always starts with a forward slash
-    if ('/' !== ($target[0] ?? '')) $target= '/'.$target;
+    $target= $this->base.ltrim($target, '/');
+    $conn= ($this->connections)('https://'.$host.$target);
+    $conn->setTrace($this->cat);
 
     // Create and sign request
-    $conn= ($this->connections)('https://'.$host.$target);
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
     $request->setTarget($target);
@@ -116,7 +123,6 @@ class ServiceEndpoint implements Traceable {
       $payload ?? ''
     ));
 
-    $conn->setTrace($this->cat);
     if (null === $payload) {
       $r= $conn->send($request);
     } else {

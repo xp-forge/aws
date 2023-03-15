@@ -13,9 +13,9 @@ class RequestTest {
     ;
   }
 
-  #[Test]
-  public function invoke_lambda() {
-    $endpoint= $this->endpoint('lambda', [
+  /** Returns a testing endpoint with a lambda invocation result */
+  private function lambda(): ServiceEndpoint {
+    return $this->endpoint('lambda', [
       '/2015-03-31/functions/test/invocations' => [
         'HTTP/1.1 200 OK',
         'Content-Type: text/plain',
@@ -23,9 +23,28 @@ class RequestTest {
         'Testing local'
       ]
     ]);
-    $response= $endpoint
+  }
+
+  #[Test]
+  public function invoke_lambda() {
+    $response= $this->lambda()
       ->in('eu-central-1')
       ->resource('/2015-03-31/functions/{name}/invocations', ['name' => 'test'])
+      ->transmit(['source' => 'local'])
+    ;
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['Content-Type' => 'text/plain'], $response->headers());
+    Assert::equals('Testing local', $response->content());
+  }
+
+  #[Test]
+  public function invoke_lambda_with_version() {
+    $response= $this->lambda()
+      ->in('eu-central-1')
+      ->version('2015-03-31')
+      ->resource('/functions/{name}/invocations', ['name' => 'test'])
       ->transmit(['source' => 'local'])
     ;
 
@@ -47,16 +66,7 @@ class RequestTest {
 
   #[Test]
   public function text_value() {
-    $endpoint= $this->endpoint('lambda', [
-      '/2015-03-31/functions/test/invocations' => [
-        'HTTP/1.1 200 OK',
-        'Content-Type: text/plain',
-        '',
-        'Testing local'
-      ]
-    ]);
-
-    Assert::equals('Testing local', $endpoint
+    Assert::equals('Testing local', $this->lambda()
       ->resource('/2015-03-31/functions/{name}/invocations', ['name' => 'test'])
       ->transmit(['source' => 'local'])
       ->value()

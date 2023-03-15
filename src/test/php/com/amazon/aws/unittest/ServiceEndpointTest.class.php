@@ -54,4 +54,12 @@ class ServiceEndpointTest {
       ->resource('/2015-03-31/functions/{name}/invocations', ['name' => 'test'])
     );
   }
+
+  #[Test]
+  public function version_resource() {
+    Assert::instance(Resource::class, (new ServiceEndpoint('lambda', $this->credentials))
+      ->version('2015-03-31')
+      ->resource('/functions/{name}/invocations', ['name' => 'test'])
+    );
+  }
 }
