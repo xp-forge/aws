@@ -16,6 +16,7 @@ class ServiceEndpoint implements Traceable {
   private $region= null;
   private $cat= null;
   private $base= '/';
+  private $domain= null;
 
   /**
    * Creates a new AWS endpoint
@@ -53,6 +54,12 @@ class ServiceEndpoint implements Traceable {
     return $this;
   }
 
+  /** Sets domain or prefix to use */
+  public function using(string $domain): self {
+    $this->domain= $domain;
+    return $this;
+  }
+
   /** @return string */
   public function service() { return $this->service; }
 
@@ -61,6 +68,23 @@ class ServiceEndpoint implements Traceable {
 
   /** @return ?string */
   public function region() { return $this->region; }
+
+  /** @return string */
+  public function domain() {
+    if (null === $this->domain) {
+      return null === $this->region
+        ? "{$this->service}.amazonaws.com"
+        : "{$this->service}.{$this->region}.amazonaws.com"
+      ;
+    } else if (false === strpos($this->domain, '.')) {
+      return null === $this->region
+        ? "{$this->domain}.{$this->service}.amazonaws.com"
+        : "{$this->domain}.{$this->service}.{$this->region}.amazonaws.com"
+      ;
+    } else {
+      return $this->domain;
+    }
+  }
 
   /**
    * Sets a log category for debugging
@@ -100,11 +124,7 @@ class ServiceEndpoint implements Traceable {
    * @throws io.IOException
    */
   public function request(string $method, string $target, array $headers= [], string $payload= null): Response {
-    $host= null === $this->region
-      ? "{$this->service}.amazonaws.com"
-      : "{$this->service}.{$this->region}.amazonaws.com"
-    ;
-
+    $host= $this->domain();
     $target= $this->base.ltrim($target, '/');
     $conn= ($this->connections)('https://'.$host.$target);
     $conn->setTrace($this->cat);

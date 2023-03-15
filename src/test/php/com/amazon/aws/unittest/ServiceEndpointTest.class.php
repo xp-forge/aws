@@ -2,7 +2,7 @@
 
 use com\amazon\aws\api\Resource;
 use com\amazon\aws\{ServiceEndpoint, Credentials};
-use test\{Assert, Before, Test};
+use test\{Assert, Before, Test, Values};
 
 class ServiceEndpointTest {
   private $credentials;
@@ -60,6 +60,33 @@ class ServiceEndpointTest {
     Assert::instance(Resource::class, (new ServiceEndpoint('lambda', $this->credentials))
       ->version('2015-03-31')
       ->resource('/functions/{name}/invocations', ['name' => 'test'])
+    );
+  }
+
+  #[Test]
+  public function global_domain() {
+    Assert::equals(
+      'iam.amazonaws.com',
+      (new ServiceEndpoint('iam', $this->credentials))->domain()
+    );
+  }
+
+  #[Test]
+  public function region_domain() {
+    Assert::equals(
+      'lambda.eu-central-1.amazonaws.com',
+      (new ServiceEndpoint('lambda', $this->credentials))->in('eu-central-1')->domain()
+    );
+  }
+
+  #[Test, Values(['id', 'id.execute-api.eu-central-1.amazonaws.com'])]
+  public function use_domain_or_prefix($domain) {
+    Assert::equals(
+      'id.execute-api.eu-central-1.amazonaws.com',
+      (new ServiceEndpoint('execute-api', $this->credentials))
+        ->in('eu-central-1')
+        ->using($domain)
+        ->domain()
     );
   }
 }
