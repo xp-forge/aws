@@ -3,45 +3,48 @@
 use lang\ElementNotFoundException;
 use text\json\Json;
 
+/** @test com.amazon.aws.unittest.ResourceTest */
 class Resource {
-  private $endpoint, $target;
-
-  public function __construct($endpoint, $path, $segments) {
-    $this->endpoint= $endpoint;
-    $this->target= $this->resolve($path, $segments);
-  }
+  private $endpoint;
+  public $target= '';
 
   /**
-   * Resolves segments in resource
+   * Creates a new resource on a given endpoint
    *
-   * @param  string $resource
-   * @param  [:string] $segments
-   * @return string
+   * @param  com.amazon.aws.ServiceEndpoint $endpoint
+   * @param  string $path
+   * @param  string[]|[:string] $segments
+   * @throws lang.ElementNotFoundException
    */
-  private function resolve($resource, $segments) {
-    $l= strlen($resource);
-    $target= '';
+  public function __construct($endpoint, $path, $segments= []) {
+    $this->endpoint= $endpoint;
+
+    $l= strlen($path);
     $offset= 0;
     do {
-      $b= strcspn($resource, '{', $offset);
-      $target.= substr($resource, $offset, $b);
+      $b= strcspn($path, '{', $offset);
+      $this->target.= substr($path, $offset, $b);
       $offset+= $b;
       if ($offset >= $l) break;
 
-      $e= strcspn($resource, '}', $offset);
-      $name= substr($resource, $offset + 1, $e - 1);
+      $e= strcspn($path, '}', $offset);
+      $name= substr($path, $offset + 1, $e - 1);
       if (!isset($segments[$name])) {
         throw new ElementNotFoundException('No such segment "'.$name.'"');
       }
 
       $segment= $segments[$name];
-      $target.= rawurlencode($segment);
+      $this->target.= rawurlencode($segment);
       $offset+= $e + 1;
     } while ($offset < $l);
-
-    return $target;
   }
 
+  /**
+   * Transmits a given payload and returns the response
+   *
+   * @param  var $payload
+   * @return com.amazon.aws.api.Response
+   */
   public function transmit($payload) {
     return $this->endpoint->request(
       'POST',
