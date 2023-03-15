@@ -19,7 +19,7 @@ use util\Secret;
 use util\cmd\Console;
 use util\log\Logging;
 
-$credentials= new Credentials($accessKey, new Secret($secretKey))
+$credentials= new Credentials($accessKey, new Secret($secretKey));
 
 $api= (new ServiceEndpoint('lambda', $credentials))->in('eu-central-1')->version('2015-03-31');
 $api->setTrace(Logging::all()->toConsole());
