@@ -10,12 +10,24 @@ AWS Core for the XP Framework
 
 Provides common AWS functionality.
 
-Contents
---------
+Invoking a lambda
+-----------------
+
 ```php
-package com.amazon.aws {
-  public class com.amazon.aws.Credentials
-}
+use com\amazon\aws\{Credentials, ServiceEndpoint};
+use util\Secret;
+use util\cmd\Console;
+use util\log\Logging;
+
+$credentials= new Credentials($accessKey, new Secret($secretKey))
+
+$api= (new ServiceEndpoint('lambda', $credentials))->in('eu-central-1')->version('2015-03-31');
+$api->setTrace(Logging::all()->toConsole());
+
+$r= $api->resource('/functions/greet/invocations')->transmit(['name' => getenv('USER')]);
+
+Console::writeLine($r);
+Console::writeLine($r->value());
 ```
 
 See also
