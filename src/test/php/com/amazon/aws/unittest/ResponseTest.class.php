@@ -2,8 +2,9 @@
 
 use com\amazon\aws\api\Response;
 use io\streams\MemoryInputStream;
-use test\{Assert, Expect, Test, Values};
 use lang\IllegalStateException;
+use test\{Assert, Expect, Test, Values};
+use util\Date;
 
 class ResponseTest {
   const STATUS= [200 => 'OK', 204 => 'No content', 404 => 'Not found'];
@@ -76,5 +77,23 @@ class ResponseTest {
   #[Test, Expect(class: IllegalStateException::class, message: 'Cannot deserialize without content type')]
   public function cannot_deserialize_result_without_content_type() {
     $this->response(204)->result();
+  }
+
+  #[Test]
+  public function cast_result() {
+    $payload= '{"success":true,"date":"2023-03-18T14:49:47+0100"}';
+    Assert::equals(
+      new Result(true, new Date('2023-03-18T14:49:47+0100')),
+      $this->response(200, $payload, 'application/json')->result(Result::class)
+    );
+  }
+
+  #[Test]
+  public function cast_error() {
+    $payload= '{"kind":"IO_0002","message":"Not found"}';
+    Assert::equals(
+      new Error('IO_0002', 'Not found'),
+      $this->response(404, $payload, 'application/json')->error(Error::class)
+    );
   }
 }

@@ -3,20 +3,28 @@
 use io\streams\{InputStream, Streams};
 use lang\{Value, IllegalStateException};
 use text\json\{Json, StreamInput};
+use util\data\Marshalling;
 use util\{Comparison, Objects};
 
 /** @test com.amazon.aws.unittest.ResponseTest */
 class Response implements Value {
   use Comparison;
 
-  private $status, $message, $stream;
+  private $status, $message, $stream, $marshalling;
   private $headers= [], $lookup= [];
 
   /** Creates a new response */
-  public function __construct(int $status, string $message, array $headers, InputStream $stream) {
+  public function __construct(
+    int $status,
+    string $message,
+    array $headers,
+    InputStream $stream,
+    Marshalling $marshalling= null
+  ) {
     $this->status= $status;
     $this->message= $message;
     $this->stream= $stream;
+    $this->marshalling= $marshalling ?? new Marshalling();
 
     foreach ($headers as $name => $value) {
       $lookup= strtolower($name);
@@ -69,26 +77,31 @@ class Response implements Value {
    * Returns deserialized value, raising an error if the content
    * type is unknown.
    *
+   * @param  ?string $type
    * @return var
    * @throws lang.IllegalStateException
    */
-  public function value() {
-    switch ($type= ($this->headers['Content-Type'][0] ?? null)) {
-      case 'application/json': return Json::read(new StreamInput($this->stream));
-      case 'text/plain': return Streams::readAll($this->stream);
+  public function value($type= null) {
+    switch ($mime= ($this->headers['Content-Type'][0] ?? null)) {
+      case 'application/json': $value= Json::read(new StreamInput($this->stream)); break;
+      case 'text/plain': $value= Streams::readAll($this->stream); break;
+      default: throw new IllegalStateException('Cannot deserialize '.($mime ?? 'without content type'));
     }
-    throw new IllegalStateException('Cannot deserialize '.($type ?? 'without content type'));
+
+    // Unmarshal to given target type unless it's NULL
+    return null === $type ? $value : $this->marshalling->unmarshal($value, $type);
   }
 
   /**
    * Returns result, raising an error for non-2XX status codes or
    * if the returned content type is unknown.
    *
+   * @param  ?string $type
    * @return var
    * @throws lang.IllegalStateException
    */
-  public function result() {
-    if ($this->status >= 200 && $this->status < 300) return $this->value();
+  public function result($type= null) {
+    if ($this->status >= 200 && $this->status < 300) return $this->value($type);
 
     throw new IllegalStateException(sprintf(
       '%d %s does not indicate a successful response',
@@ -101,11 +114,12 @@ class Response implements Value {
    * Returns error, raising an error for non-error status codes or
    * if the returned content type is unknown.
    *
+   * @param  ?string $type
    * @return var
    * @throws lang.IllegalStateException
    */
-  public function error() {
-    if ($this->status >= 400) return $this->value();
+  public function error($type= null) {
+    if ($this->status >= 400) return $this->value($type);
 
     throw new IllegalStateException(sprintf(
       '%d %s does not indicate an error response',
