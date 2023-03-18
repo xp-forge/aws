@@ -3,6 +3,7 @@
 use com\amazon\aws\api\Resource;
 use com\amazon\aws\{ServiceEndpoint, Credentials};
 use test\{Assert, Test};
+use util\Date;
 
 class RequestTest {
 
@@ -97,6 +98,22 @@ class RequestTest {
       ->resource('/gone')
       ->transmit([])
       ->value()
+    );
+  }
+
+  #[Test]
+  public function marshals_json_value() {
+    $endpoint= $this->endpoint('queue', [
+      '/messages' => [
+        'HTTP/1.1 202 Accepted',
+        '',
+      ]
+    ]);
+
+    Assert::equals(202, $endpoint
+      ->resource('/messages')
+      ->transmit(['id' => 6100, 'created' => Date::now()])
+      ->status()
     );
   }
 }

@@ -2,6 +2,7 @@
 
 use com\amazon\aws\api\{Resource, Response, SignatureV4};
 use peer\http\{HttpConnection, HttpRequest};
+use util\data\Marshalling;
 use util\log\Traceable;
 
 /**
@@ -12,7 +13,7 @@ use util\log\Traceable;
  * @test  com.amazon.aws.unittest.RequestTest
  */
 class ServiceEndpoint implements Traceable {
-  private $service, $credentials, $signature, $connections;
+  private $service, $credentials, $signature, $connections, $marshalling;
   private $region= null;
   private $cat= null;
   private $base= '/';
@@ -34,6 +35,7 @@ class ServiceEndpoint implements Traceable {
       PHP_VERSION
     ));
     $this->connections= function($uri) { return new HttpConnection($uri); };
+    $this->marshalling= new Marshalling();
   }
 
   /** Sets region code */
@@ -115,7 +117,7 @@ class ServiceEndpoint implements Traceable {
    * @throws lang.ElementNotFoundException
    */
   public function resource(string $path, array $segments= []): Resource {
-    return new Resource($this, $path, $segments);
+    return new Resource($this, $path, $segments, $this->marshalling);
   }
 
   /**
@@ -150,6 +152,6 @@ class ServiceEndpoint implements Traceable {
       $stream->write($payload);
       $r= $conn->finish($stream);
     } 
-    return new Response($r->statusCode(), $r->message(), $r->headers(), $r->in());
+    return new Response($r->statusCode(), $r->message(), $r->headers(), $r->in(), $this->marshalling);
   }
 }

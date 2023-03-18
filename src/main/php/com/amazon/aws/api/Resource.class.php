@@ -2,10 +2,11 @@
 
 use lang\ElementNotFoundException;
 use text\json\Json;
+use util\data\Marshalling;
 
 /** @test com.amazon.aws.unittest.ResourceTest */
 class Resource {
-  private $endpoint;
+  private $endpoint, $marshalling;
   public $target= '';
 
   /**
@@ -14,10 +15,12 @@ class Resource {
    * @param  com.amazon.aws.ServiceEndpoint $endpoint
    * @param  string $path
    * @param  string[]|[:string] $segments
+   * @param  ?util.data.Marshalling $marshalling
    * @throws lang.ElementNotFoundException
    */
-  public function __construct($endpoint, $path, $segments= []) {
+  public function __construct($endpoint, $path, $segments= [], Marshalling $marshalling= null) {
     $this->endpoint= $endpoint;
+    $this->marshalling= $marshalling ?? new Marshalling();
 
     $l= strlen($path);
     $offset= 0;
@@ -50,7 +53,7 @@ class Resource {
       'POST',
       $this->target,
       ['Content-Type' => 'application/json'],
-      Json::of($payload)
+      Json::of($this->marshalling->marshal($payload))
     );
   }
 }
