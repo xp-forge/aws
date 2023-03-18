@@ -3,6 +3,12 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.1.0 / 2023-03-18
+
+* Merged PR #3: Marshal and unmarshal payloads. Adds a dependency on the
+  `xp-forge/marshalling` library
+  (@thekid)
+
 ## 1.0.0 / 2023-03-15
 
 * Fixed *Creation of dynamic property ... is deprecated* errors - @thekid
