@@ -77,7 +77,7 @@ class Response implements Value {
    * Returns deserialized value, raising an error if the content
    * type is unknown.
    *
-   * @param  ?string $type
+   * @param  ?string|lang.Type $type
    * @return var
    * @throws lang.IllegalStateException
    */
@@ -96,7 +96,7 @@ class Response implements Value {
    * Returns result, raising an error for non-2XX status codes or
    * if the returned content type is unknown.
    *
-   * @param  ?string $type
+   * @param  ?string|lang.Type $type
    * @return var
    * @throws lang.IllegalStateException
    */
@@ -114,7 +114,7 @@ class Response implements Value {
    * Returns error, raising an error for non-error status codes or
    * if the returned content type is unknown.
    *
-   * @param  ?string $type
+   * @param  ?string|lang.Type $type
    * @return var
    * @throws lang.IllegalStateException
    */

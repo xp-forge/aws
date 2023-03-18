@@ -2,7 +2,7 @@
 
 use com\amazon\aws\api\Response;
 use io\streams\MemoryInputStream;
-use lang\IllegalStateException;
+use lang\{IllegalStateException, XPClass};
 use test\{Assert, Expect, Test, Values};
 use util\Date;
 
@@ -79,21 +79,21 @@ class ResponseTest {
     $this->response(204)->result();
   }
 
-  #[Test]
-  public function cast_result() {
+  #[Test, Values(eval: '[Result::class, new XPClass(Result::class)]')]
+  public function cast_result($type) {
     $payload= '{"success":true,"date":"2023-03-18T14:49:47+0100"}';
     Assert::equals(
       new Result(true, new Date('2023-03-18T14:49:47+0100')),
-      $this->response(200, $payload, 'application/json')->result(Result::class)
+      $this->response(200, $payload, 'application/json')->result($type)
     );
   }
 
-  #[Test]
-  public function cast_error() {
+  #[Test, Values(eval: '[Error::class, new XPClass(Error::class)]')]
+  public function cast_error($type) {
     $payload= '{"kind":"IO_0002","message":"Not found"}';
     Assert::equals(
       new Error('IO_0002', 'Not found'),
-      $this->response(404, $payload, 'application/json')->error(Error::class)
+      $this->response(404, $payload, 'application/json')->error($type)
     );
   }
 }
