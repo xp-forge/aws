@@ -85,4 +85,31 @@ class SignatureV4Test {
       )
     );
   }
+
+  #[Test]
+  public function headers_with_param() {
+    $signature= new SignatureV4($this->credentials, self::USER_AGENT);
+    Assert::equals(
+      [
+        'Host'             => 'lambda.eu-central-1.amazonaws.com',
+        'X-Amz-Date'       => $signature->datetime(self::TEST_TIME),
+        'X-Amz-User-Agent' => self::USER_AGENT,
+        'Authorization'    => implode(' ', [
+          SignatureV4::ALGO,
+          'Credential=key/20230314/us-east-1/lambda/aws4_request,',
+          'SignedHeaders=host;x-amz-date;x-amz-user-agent,',
+          'Signature=8c4b20b5ae81f5b25eea692ddba89e6aca52e4b7e533b2bfe199ddf28f1062c4',
+        ]),
+      ],
+      $signature->headers(
+        'lambda',
+        'us-east-1',
+        'lambda.eu-central-1.amazonaws.com',
+        'POST',
+        '/2015-03-31/functions/greet/invocations?force=true',
+        '{"user":"test"}',
+        self::TEST_TIME
+      )
+    );
+  }
 }

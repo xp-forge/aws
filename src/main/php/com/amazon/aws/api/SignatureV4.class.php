@@ -115,8 +115,16 @@ class SignatureV4 {
       $headers['X-Amz-Security-Token']= $session;
     }
 
+    // Parse query string parameters
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+
     // Calculate signature, then return headers including authorization
-    $signature= $this->sign($service, $region, $method, $target, [], hash(self::HASH, $payload), $headers, $time);
+    $signature= $this->sign($service, $region, $method, $target, $params, hash(self::HASH, $payload), $headers, $time);
     return $headers + ['Authorization' => sprintf(
       '%s Credential=%s, SignedHeaders=%s, Signature=%s',
       self::ALGO,
