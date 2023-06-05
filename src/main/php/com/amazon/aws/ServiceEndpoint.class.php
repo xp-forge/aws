@@ -4,7 +4,6 @@ use com\amazon\aws\api\{Resource, Response, SignatureV4};
 use peer\http\{HttpConnection, HttpRequest};
 use util\data\Marshalling;
 use util\log\Traceable;
-use util\URI;
 
 /**
  * AWS service endpoint
@@ -126,8 +125,14 @@ class ServiceEndpoint implements Traceable {
     $host= $this->domain();
     $region= $this->region ?? '*';
 
-    // Create query string and append to target
-    $params= [
+    // Ensure parameters are sorted alphabetically
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+    $params+= [
       'X-Amz-Algorithm'      => SignatureV4::ALGO,
       'X-Amz-Credential'     => $this->signature->credential($this->service, $region, $time),
       'X-Amz-Date'           => $this->signature->datetime($time),
@@ -135,15 +140,18 @@ class ServiceEndpoint implements Traceable {
       'X-Amz-Security-Token' => $this->credentials->sessionToken(),
       'X-Amz-SignedHeaders'  => 'host',
     ];
+    ksort($params);
+
+    // Create query string and append to base and target
     $query= '';
     foreach ($params as $name => $param) {
-      $query.= '&'.$name.'='.urlencode($param);
+      $query.= '&'.urlencode($name).'='.urlencode($param);
     }
-    if (false === strpos($target, '?')) $query[0]= '?';
+    $query[0]= '?';
+    $link= $this->base.ltrim($target, '/').$query;
 
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
-    $link= $this->base.ltrim($target, '/').$query;
     $signature= $this->signature->sign(
       $this->service,
       $region,
