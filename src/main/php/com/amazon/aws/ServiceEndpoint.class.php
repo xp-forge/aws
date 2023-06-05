@@ -142,16 +142,9 @@ class ServiceEndpoint implements Traceable {
     ];
     ksort($params);
 
-    // Create query string and append to base and target
-    $query= '';
-    foreach ($params as $name => $param) {
-      $query.= '&'.urlencode($name).'='.urlencode($param);
-    }
-    $query[0]= '?';
-    $link= $this->base.ltrim($target, '/').$query;
-
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
+    $link= $this->base.ltrim($target, '/').'?'.http_build_query($params);
     $signature= $this->signature->sign(
       $this->service,
       $region,

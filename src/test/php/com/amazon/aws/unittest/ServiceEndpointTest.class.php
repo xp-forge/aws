@@ -109,4 +109,25 @@ class ServiceEndpointTest {
       $uri
     );
   }
+
+  #[Test]
+  public function sign_link_with_param() {
+    $uri= (new ServiceEndpoint('s3', $this->credentials))
+      ->using('bucket')
+      ->sign('/folder/resource.txt?response-content-disposition=inline', 3600, strtotime('20230606T231444Z'))
+    ;
+
+    Assert::equals(
+      'https://bucket.s3.amazonaws.com/folder/resource.txt'.
+      '?X-Amz-Algorithm=AWS4-HMAC-SHA256'.
+      '&X-Amz-Credential=key%2F20230606%2F%2A%2Fs3%2Faws4_request'.
+      '&X-Amz-Date=20230606T231444Z'.
+      '&X-Amz-Expires=3600'.
+      '&X-Amz-Security-Token=session'.
+      '&X-Amz-SignedHeaders=host'.
+      '&response-content-disposition=inline'.
+      '&X-Amz-Signature=589d505a193a066ed7c7aaef1d1abdeba57ec01d7f0e0326fc54711597ed8119',
+      $uri
+    );
+  }
 }
