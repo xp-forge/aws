@@ -122,7 +122,7 @@ class ServiceEndpoint implements Traceable {
   }
 
   /** Signs a given target (optionally including parameters) with a given expiry time */
-  public function sign(string $target, int $expires= 3600, int $time= null): URI {
+  public function sign(string $target, int $expires= 3600, int $time= null): string {
     $host= $this->domain();
     $region= $this->region ?? '*';
 
@@ -143,25 +143,17 @@ class ServiceEndpoint implements Traceable {
 
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
+    $link= $this->base.ltrim($target, '/').$query;
     $signature= $this->signature->sign(
       $this->service,
       $region,
       'GET',
-      $this->base.ltrim($target, '/').$query,
+      $link,
       'UNSIGNED-PAYLOAD',
       ['Host' => $host],
       $time
     );
-
-    // Finally, compose URL with parameters and signature
-    return URI::with()
-      ->scheme('https')
-      ->host($host)
-      ->path($target)
-      ->params($params)
-      ->param('X-Amz-Signature', $signature['signature'])
-      ->create()
-    ;
+    return "https://{$host}{$link}&X-Amz-Signature=".urlencode($signature['signature']);
   }
 
   /**

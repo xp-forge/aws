@@ -106,7 +106,7 @@ class ServiceEndpointTest {
       '&X-Amz-Security-Token=session'.
       '&X-Amz-SignedHeaders=host'.
       '&X-Amz-Signature=ebb6a81bd3ad8e2bfc968bdec6b97d18693e05e9117e637629a4642396ce6b1c',
-      (string)$uri
+      $uri
     );
   }
 }
