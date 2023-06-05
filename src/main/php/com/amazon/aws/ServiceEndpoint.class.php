@@ -125,7 +125,7 @@ class ServiceEndpoint implements Traceable {
     $host= $this->domain();
     $region= $this->region ?? '*';
 
-    // Ensure parameters are sorted alphabetically
+    // Combine target parameters with `X-Amz-*` headers used for signature
     if (false === ($p= strpos($target, '?'))) {
       $params= [];
     } else {
@@ -140,21 +140,24 @@ class ServiceEndpoint implements Traceable {
       'X-Amz-Security-Token' => $this->credentials->sessionToken(),
       'X-Amz-SignedHeaders'  => 'host',
     ];
-    ksort($params);
 
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
-    $link= $this->base.ltrim($target, '/').'?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+    $link= $this->base.ltrim($target, '/');
     $signature= $this->signature->sign(
       $this->service,
       $region,
       'GET',
       $link,
+      $params,
       'UNSIGNED-PAYLOAD',
       ['Host' => $host],
       $time
     );
-    return "https://{$host}{$link}&X-Amz-Signature=".urlencode($signature['signature']);
+
+    // Finally, append signature parameter to signed link
+    $params['X-Amz-Signature']= $signature['signature'];
+    return "https://{$host}{$link}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
   }
 
   /**

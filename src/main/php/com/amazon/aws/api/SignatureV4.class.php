@@ -43,6 +43,7 @@ class SignatureV4 {
     string $region,
     string $method,
     string $target,
+    array $params,
     string $contentHash,
     array $headers= [],
     int $time= null
@@ -50,14 +51,13 @@ class SignatureV4 {
     $requestDate= $this->datetime($time);
 
     // Step 1: Create a canonical request using the URI-encoded version of the path
-    if (false === ($p= strpos($target, '?'))) {
-      $query= '';
+    if ($params) {
+      ksort($params);
+      $query= http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     } else {
-      $query= substr($target, $p + 1);
-      $target= substr($target, 0, $p);
+      $query= '';
     }
-    $path= strtr(rawurlencode($target), ['%2F' => '/']);
-    $canonical= "{$method}\n{$path}\n{$query}\n";
+    $canonical= "{$method}\n".strtr(rawurlencode($target), ['%2F' => '/'])."\n{$query}\n";
 
     // Header names must use lowercase characters and must appear in alphabetical order.
     $sorted= [];
@@ -116,7 +116,7 @@ class SignatureV4 {
     }
 
     // Calculate signature, then return headers including authorization
-    $signature= $this->sign($service, $region, $method, $target, hash(self::HASH, $payload), $headers, $time);
+    $signature= $this->sign($service, $region, $method, $target, [], hash(self::HASH, $payload), $headers, $time);
     return $headers + ['Authorization' => sprintf(
       '%s Credential=%s, SignedHeaders=%s, Signature=%s',
       self::ALGO,

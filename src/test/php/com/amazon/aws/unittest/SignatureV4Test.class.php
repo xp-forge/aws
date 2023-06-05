@@ -51,6 +51,7 @@ class SignatureV4Test {
         'us-east-1',
         'GET',
         '/folder/resource.txt',
+        [],
         hash(SignatureV4::HASH, '{"user":"test"}'),
         [],
         self::TEST_TIME
