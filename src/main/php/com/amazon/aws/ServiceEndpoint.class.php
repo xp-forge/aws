@@ -4,6 +4,7 @@ use com\amazon\aws\api\{Resource, Response, SignatureV4};
 use peer\http\{HttpConnection, HttpRequest};
 use util\data\Marshalling;
 use util\log\Traceable;
+use util\URI;
 
 /**
  * AWS service endpoint
@@ -118,6 +119,49 @@ class ServiceEndpoint implements Traceable {
    */
   public function resource(string $path, array $segments= []): Resource {
     return new Resource($this, $path, $segments, $this->marshalling);
+  }
+
+  /** Signs a given target (optionally including parameters) with a given expiry time */
+  public function sign(string $target, int $expires= 3600, int $time= null): URI {
+    $host= $this->domain();
+    $region= $this->region ?? '*';
+
+    // Create query string and append to target
+    $params= [
+      'X-Amz-Algorithm'      => SignatureV4::ALGO,
+      'X-Amz-Credential'     => $this->signature->credential($this->service, $region, $time),
+      'X-Amz-Date'           => $this->signature->datetime($time),
+      'X-Amz-Expires'        => $expires,
+      'X-Amz-Security-Token' => $this->credentials->sessionToken(),
+      'X-Amz-SignedHeaders'  => 'host',
+    ];
+    $query= '';
+    foreach ($params as $name => $param) {
+      $query.= '&'.$name.'='.urlencode($param);
+    }
+    if (false === strpos($target, '?')) $query[0]= '?';
+
+    // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
+    // signing only the "Host" header as indicated above.
+    $signature= $this->signature->sign(
+      $this->service,
+      $region,
+      'GET',
+      $this->base.ltrim($target, '/').$query,
+      'UNSIGNED-PAYLOAD',
+      ['Host' => $host],
+      $time
+    );
+
+    // Finally, compose URL with parameters and signature
+    return URI::with()
+      ->scheme('https')
+      ->host($host)
+      ->path($target)
+      ->params($params)
+      ->param('X-Amz-Signature', $signature['signature'])
+      ->create()
+    ;
   }
 
   /**
