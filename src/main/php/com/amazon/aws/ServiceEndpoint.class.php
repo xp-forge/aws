@@ -120,6 +120,46 @@ class ServiceEndpoint implements Traceable {
     return new Resource($this, $path, $segments, $this->marshalling);
   }
 
+  /** Signs a given target (optionally including parameters) with a given expiry time */
+  public function sign(string $target, int $expires= 3600, int $time= null): string {
+    $host= $this->domain();
+    $region= $this->region ?? '*';
+
+    // Combine target parameters with `X-Amz-*` headers used for signature
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+    $params+= [
+      'X-Amz-Algorithm'      => SignatureV4::ALGO,
+      'X-Amz-Credential'     => $this->signature->credential($this->service, $region, $time),
+      'X-Amz-Date'           => $this->signature->datetime($time),
+      'X-Amz-Expires'        => $expires,
+      'X-Amz-Security-Token' => $this->credentials->sessionToken(),
+      'X-Amz-SignedHeaders'  => 'host',
+    ];
+
+    // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
+    // signing only the "Host" header as indicated above.
+    $link= $this->base.ltrim($target, '/');
+    $signature= $this->signature->sign(
+      $this->service,
+      $region,
+      'GET',
+      $link,
+      $params,
+      'UNSIGNED-PAYLOAD',
+      ['Host' => $host],
+      $time
+    );
+
+    // Finally, append signature parameter to signed link
+    $params['X-Amz-Signature']= $signature['signature'];
+    return "https://{$host}{$link}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+  }
+
   /**
    * Sends a request and returns the response
    *

@@ -21,32 +21,43 @@ class SignatureV4 {
     $this->userAgent= $userAgent;
   }
 
-  /** Returns signature headers */
-  public function headers(
+  /** Returns date and time formatted according to spec in UTC */
+  public function datetime(int $time= null): string {
+    return gmdate('Ymd\THis\Z', $time ?? time());
+  }
+
+  /** Returns credential including scope for a given service, region and time */
+  public function credential(string $service, string $region, int $time= null): string {
+    return sprintf(
+      '%s/%s/%s/%s/aws4_request',
+      $this->credentials->accessKey(),
+      gmdate('Ymd', $time ?? time()),
+      $region,
+      $service
+    );
+  }
+
+  /** Returns a signature */
+  public function sign(
     string $service,
     string $region,
-    string $host,
     string $method,
     string $target,
-    string $payload,
+    array $params,
+    string $contentHash,
+    array $headers= [],
     int $time= null
   ): array {
-    $requestDate= gmdate('Ymd\THis\Z', $time ?? time());
-    $contentHash= hash(self::HASH, $payload);
-    $headers= [
-      'Host'             => $host,
-      'X-Amz-Date'       => $requestDate,
-      'X-Amz-User-Agent' => $this->userAgent,
-    ];
-
-    if (null !== ($session= $this->credentials->sessionToken())) {
-      $headers['X-Amz-Security-Token']= $session;
-    }
+    $requestDate= $this->datetime($time);
 
     // Step 1: Create a canonical request using the URI-encoded version of the path
-    $path= strtr(rawurlencode($target), ['%2F' => '/']);
-    $query= '';
-    $canonical= "{$method}\n{$path}\n{$query}\n";
+    if ($params) {
+      ksort($params);
+      $query= http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+    } else {
+      $query= '';
+    }
+    $canonical= "{$method}\n".strtr(rawurlencode($target), ['%2F' => '/'])."\n{$query}\n";
 
     // Header names must use lowercase characters and must appear in alphabetical order.
     $sorted= [];
@@ -74,13 +85,52 @@ class SignatureV4 {
     $serviceHash= hash_hmac(self::HASH, $service, $regionHash, true);
     $signingHash= hash_hmac(self::HASH, 'aws4_request', $serviceHash, true);
 
+    return [
+      'credential' => $this->credentials->accessKey().'/'.$credentialScope,
+      'headers'    => $headerList,
+      'signature'  => hash_hmac(self::HASH, $toSign, $signingHash)
+    ];
+  }
+
+  /** Returns signature headers */
+  public function headers(
+    string $service,
+    string $region,
+    string $host,
+    string $method,
+    string $target,
+    string $payload,
+    int $time= null
+  ): array {
+
+    // Compile headers from given host and time including our user agent
+    $headers= [
+      'Host'             => $host,
+      'X-Amz-Date'       => $this->datetime($time),
+      'X-Amz-User-Agent' => $this->userAgent,
+    ];
+
+    // Automatically include session token if available
+    if (null !== ($session= $this->credentials->sessionToken())) {
+      $headers['X-Amz-Security-Token']= $session;
+    }
+
+    // Parse query string parameters
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+
+    // Calculate signature, then return headers including authorization
+    $signature= $this->sign($service, $region, $method, $target, $params, hash(self::HASH, $payload), $headers, $time);
     return $headers + ['Authorization' => sprintf(
-      '%s Credential=%s/%s, SignedHeaders=%s, Signature=%s',
+      '%s Credential=%s, SignedHeaders=%s, Signature=%s',
       self::ALGO,
-      $this->credentials->accessKey(),
-      $credentialScope,
-      $headerList,
-      hash_hmac(self::HASH, $toSign, $signingHash)
+      $signature['credential'],
+      $signature['headers'],
+      $signature['signature']
     )];
   }
 }
