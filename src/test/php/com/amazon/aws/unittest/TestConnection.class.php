@@ -1,5 +1,6 @@
 <?php namespace com\amazon\aws\unittest;
 
+use Closure;
 use io\streams\MemoryInputStream;
 use peer\http\{HttpConnection, HttpOutputStream, HttpRequest, HttpResponse};
 
@@ -24,9 +25,11 @@ class TestConnection extends HttpConnection {
 
   public function send(HttpRequest $request) {
     $target= rawurldecode($request->target());
+    $response= $this->responses[$target] ?? $this->error($target);
+
     return new HttpResponse(new MemoryInputStream(implode(
       "\r\n",
-      $this->responses[$target] ?? $this->error($target)
+      $response instanceof Closure ? $response($request) : $response
     )));
   }
 
