@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.2.0 / 2023-06-06
+
 * Merged PR #4: Implement signing a link, e.g. to share S3 resources. See
   https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html
   (@thekid)
