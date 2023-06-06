@@ -30,6 +30,23 @@ Console::writeLine($r);
 Console::writeLine($r->value());
 ```
 
+Sharing a S3 resource
+---------------------
+
+```php
+use com\amazon\aws\{ServiceEndpoint, Credentials};
+use util\cmd\Console;
+
+$api= new ServiceEndpoint('s3', new Credentials(
+  getenv('AWS_ACCESS_KEY_ID'),
+  getenv('AWS_SECRET_ACCESS_KEY'),
+  getenv('AWS_SESSION_TOKEN')
+));
+$link= $api->in('eu-central-1')->using('my-bucket')->sign('/path/to/resource.png', timeout: 180);
+
+Console::writeLine($link);
+```
+
 See also
 --------
 * [AWS Lambda for XP Framework](https://github.com/xp-forge/lambda)

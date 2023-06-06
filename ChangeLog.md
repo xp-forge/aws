@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Merged PR #4: Implement signing a link, e.g. to share S3 resources. See
+  https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html
+  (@thekid)
+
 ## 1.1.0 / 2023-03-18
 
 * Merged PR #3: Marshal and unmarshal payloads. Adds a dependency on the
