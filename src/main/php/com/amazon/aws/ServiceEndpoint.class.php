@@ -11,9 +11,10 @@ use util\log\Traceable;
  * @see   https://docs.aws.amazon.com/general/latest/gr/rande.html
  * @test  com.amazon.aws.unittest.ServiceEndpointTest
  * @test  com.amazon.aws.unittest.RequestTest
+ * @test  com.amazon.aws.unittest.RequestSigningTest
  */
 class ServiceEndpoint implements Traceable {
-  private $service, $credentials, $signature, $connections, $marshalling;
+  private $service, $credentials, $signature, $userAgent, $connections, $marshalling;
   private $region= null;
   private $cat= null;
   private $base= '/';
@@ -28,12 +29,13 @@ class ServiceEndpoint implements Traceable {
   public function __construct($service, Credentials $credentials) {
     $this->service= $service;
     $this->credentials= $credentials;
-    $this->signature= new SignatureV4($credentials, sprintf(
+    $this->signature= new SignatureV4($credentials);
+    $this->userAgent= sprintf(
       'xp-aws/1.0.0 OS/%s/%s lang/php/%s',
       php_uname('s'),
       php_uname('r'),
       PHP_VERSION
-    ));
+    );
     $this->connections= function($uri) { return new HttpConnection($uri); };
     $this->marshalling= new Marshalling();
   }
@@ -137,7 +139,7 @@ class ServiceEndpoint implements Traceable {
       'X-Amz-Credential'     => $this->signature->credential($this->service, $region, $time),
       'X-Amz-Date'           => $this->signature->datetime($time),
       'X-Amz-Expires'        => $expires,
-      'X-Amz-Security-Token' => $this->credentials->sessionToken(),
+      'X-Amz-Security-Token' => $this->signature->securityToken(),
       'X-Amz-SignedHeaders'  => 'host',
     ];
 
@@ -165,7 +167,7 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.IOException
    */
-  public function request(string $method, string $target, array $headers= [], string $payload= null): Response {
+  public function request(string $method, string $target, array $headers= [], string $payload= null, int $time= null): Response {
     $host= $this->domain();
     $target= $this->base.ltrim($target, '/');
     $conn= ($this->connections)('https://'.$host.$target);
@@ -175,15 +177,46 @@ class ServiceEndpoint implements Traceable {
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
     $request->setTarget($target);
-    $request->addHeaders($headers + ['Content-Length' => strlen($payload)]);
-    $request->addHeaders($this->signature->headers(
+    $request->addHeaders($headers + ['Content-Length' => null === $payload ? 0 : strlen($payload)]);
+
+    // Compile headers from given host and time including our user agent
+    $signed= [
+      'Host'             => $host,
+      'X-Amz-Date'       => $this->signature->datetime($time),
+      'X-Amz-User-Agent' => $this->userAgent,
+    ];
+
+    // Automatically include security token if available
+    if (null !== ($token= $this->signature->securityToken())) {
+      $signed['X-Amz-Security-Token']= $token;
+    }
+
+    // Parse query string parameters
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+
+    // Calculate signature, then add headers including authorization
+    $signature= $this->signature->sign(
       $this->service,
       $this->region ?? '*',
-      $host,
       $method,
       $target,
-      $payload ?? ''
-    ));
+      $params,
+      hash(SignatureV4::HASH, $payload ?? ''),
+      $signed,
+      $time
+    );
+    $request->addHeaders($signed + ['Authorization' => sprintf(
+      '%s Credential=%s, SignedHeaders=%s, Signature=%s',
+      SignatureV4::ALGO,
+      $signature['credential'],
+      $signature['headers'],
+      $signature['signature']
+    )]);
 
     if (null === $payload) {
       $r= $conn->send($request);

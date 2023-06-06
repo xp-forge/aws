@@ -13,12 +13,11 @@ class SignatureV4 {
   const HASH= 'sha256';
   const ALGO= 'AWS4-HMAC-SHA256';
 
-  private $credentials, $userAgent;
+  private $credentials;
 
   /** Creates a new signature */
-  public function __construct(Credentials $credentials, string $userAgent) {
+  public function __construct(Credentials $credentials) {
     $this->credentials= $credentials;
-    $this->userAgent= $userAgent;
   }
 
   /** Returns date and time formatted according to spec in UTC */
@@ -35,6 +34,11 @@ class SignatureV4 {
       $region,
       $service
     );
+  }
+
+  /** @return ?string */
+  public function securityToken() {
+    return $this->credentials->sessionToken();
   }
 
   /** Returns a signature */
@@ -90,47 +94,5 @@ class SignatureV4 {
       'headers'    => $headerList,
       'signature'  => hash_hmac(self::HASH, $toSign, $signingHash)
     ];
-  }
-
-  /** Returns signature headers */
-  public function headers(
-    string $service,
-    string $region,
-    string $host,
-    string $method,
-    string $target,
-    string $payload,
-    int $time= null
-  ): array {
-
-    // Compile headers from given host and time including our user agent
-    $headers= [
-      'Host'             => $host,
-      'X-Amz-Date'       => $this->datetime($time),
-      'X-Amz-User-Agent' => $this->userAgent,
-    ];
-
-    // Automatically include session token if available
-    if (null !== ($session= $this->credentials->sessionToken())) {
-      $headers['X-Amz-Security-Token']= $session;
-    }
-
-    // Parse query string parameters
-    if (false === ($p= strpos($target, '?'))) {
-      $params= [];
-    } else {
-      parse_str(substr($target, $p + 1), $params);
-      $target= substr($target, 0, $p);
-    }
-
-    // Calculate signature, then return headers including authorization
-    $signature= $this->sign($service, $region, $method, $target, $params, hash(self::HASH, $payload), $headers, $time);
-    return $headers + ['Authorization' => sprintf(
-      '%s Credential=%s, SignedHeaders=%s, Signature=%s',
-      self::ALGO,
-      $signature['credential'],
-      $signature['headers'],
-      $signature['signature']
-    )];
   }
 }

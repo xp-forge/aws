@@ -60,54 +60,22 @@ class SignatureV4Test {
   }
 
   #[Test]
-  public function headers() {
+  public function sign_with_param() {
     $signature= new SignatureV4($this->credentials, self::USER_AGENT);
     Assert::equals(
       [
-        'Host'             => 'lambda.eu-central-1.amazonaws.com',
-        'X-Amz-Date'       => $signature->datetime(self::TEST_TIME),
-        'X-Amz-User-Agent' => self::USER_AGENT,
-        'Authorization'    => implode(' ', [
-          SignatureV4::ALGO,
-          'Credential=key/20230314/us-east-1/lambda/aws4_request,',
-          'SignedHeaders=host;x-amz-date;x-amz-user-agent,',
-          'Signature=6f3c8bf27fe7bb8caf0af2a5e032b806023c8b28683d9946ee9dde9324b7bfe1',
-        ]),
+        'credential' => 'key/20230314/us-east-1/s3/aws4_request',
+        'headers'    => '',
+        'signature'  => '6f52c8b9b8f95876b7949ab97d5226b553c7363f734529a0ce02ff0eb254e246',
       ],
-      $signature->headers(
-        'lambda',
+      $signature->sign(
+        's3',
         'us-east-1',
-        'lambda.eu-central-1.amazonaws.com',
-        'POST',
-        '/2015-03-31/functions/greet/invocations',
-        '{"user":"test"}',
-        self::TEST_TIME
-      )
-    );
-  }
-
-  #[Test]
-  public function headers_with_param() {
-    $signature= new SignatureV4($this->credentials, self::USER_AGENT);
-    Assert::equals(
-      [
-        'Host'             => 'lambda.eu-central-1.amazonaws.com',
-        'X-Amz-Date'       => $signature->datetime(self::TEST_TIME),
-        'X-Amz-User-Agent' => self::USER_AGENT,
-        'Authorization'    => implode(' ', [
-          SignatureV4::ALGO,
-          'Credential=key/20230314/us-east-1/lambda/aws4_request,',
-          'SignedHeaders=host;x-amz-date;x-amz-user-agent,',
-          'Signature=8c4b20b5ae81f5b25eea692ddba89e6aca52e4b7e533b2bfe199ddf28f1062c4',
-        ]),
-      ],
-      $signature->headers(
-        'lambda',
-        'us-east-1',
-        'lambda.eu-central-1.amazonaws.com',
-        'POST',
-        '/2015-03-31/functions/greet/invocations?force=true',
-        '{"user":"test"}',
+        'GET',
+        '/folder/resource.txt',
+        ['force' => 'true'],
+        'UNSIGNED-PAYLOAD',
+        [],
         self::TEST_TIME
       )
     );
