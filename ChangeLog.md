@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.4.0 / 2023-09-24
+
+* Added compatibility with `xp-forge/marshalling` v2.0.0 - @thekid
+
 ## 1.3.0 / 2023-06-06
 
 * Merged PR #5: Move responsibility for processing headers to endpoint
