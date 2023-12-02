@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.5.0 / 2023-12-02
+
+* Added PHP 8.4 to the test matrix - @thekid
+* Merged PR #6: Allow overwriting user agent via headers - @thekid
+
 ## 1.4.0 / 2023-09-24
 
 * Added compatibility with `xp-forge/marshalling` v2.0.0 - @thekid
