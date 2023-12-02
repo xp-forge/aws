@@ -183,7 +183,7 @@ class ServiceEndpoint implements Traceable {
     $signed= [
       'Host'             => $host,
       'X-Amz-Date'       => $this->signature->datetime($time),
-      'X-Amz-User-Agent' => $this->userAgent,
+      'X-Amz-User-Agent' => $headers['User-Agent'] ?? $this->userAgent,
     ];
 
     // Automatically include security token if available
