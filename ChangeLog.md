@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.6.0 / 2024-03-24
+
+* Made compatible with XP 12 - @thekid
+
 ## 1.5.0 / 2023-12-02
 
 * Added PHP 8.4 to the test matrix - @thekid
