@@ -123,7 +123,7 @@ class ServiceEndpoint implements Traceable {
   }
 
   /** Signs a given target (optionally including parameters) with a given expiry time */
-  public function sign(string $target, int $expires= 3600, int $time= null): string {
+  public function sign(string $target, int $expires= 3600, $time= null): string {
     $host= $this->domain();
     $region= $this->region ?? '*';
 
@@ -167,7 +167,7 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.IOException
    */
-  public function request(string $method, string $target, array $headers= [], string $payload= null, int $time= null): Response {
+  public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
     $host= $this->domain();
     $target= $this->base.ltrim($target, '/');
     $conn= ($this->connections)('https://'.$host.$target);

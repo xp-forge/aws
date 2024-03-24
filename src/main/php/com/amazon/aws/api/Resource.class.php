@@ -18,7 +18,7 @@ class Resource {
    * @param  ?util.data.Marshalling $marshalling
    * @throws lang.ElementNotFoundException
    */
-  public function __construct($endpoint, $path, $segments= [], Marshalling $marshalling= null) {
+  public function __construct($endpoint, $path, $segments= [], $marshalling= null) {
     $this->endpoint= $endpoint;
     $this->marshalling= $marshalling ?? new Marshalling();
 

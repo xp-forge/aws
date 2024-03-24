@@ -19,7 +19,7 @@ class Response implements Value {
     string $message,
     array $headers,
     InputStream $stream,
-    Marshalling $marshalling= null
+    $marshalling= null
   ) {
     $this->status= $status;
     $this->message= $message;

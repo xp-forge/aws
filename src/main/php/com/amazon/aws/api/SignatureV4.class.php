@@ -21,12 +21,12 @@ class SignatureV4 {
   }
 
   /** Returns date and time formatted according to spec in UTC */
-  public function datetime(int $time= null): string {
+  public function datetime($time= null): string {
     return gmdate('Ymd\THis\Z', $time ?? time());
   }
 
   /** Returns credential including scope for a given service, region and time */
-  public function credential(string $service, string $region, int $time= null): string {
+  public function credential(string $service, string $region, $time= null): string {
     return sprintf(
       '%s/%s/%s/%s/aws4_request',
       $this->credentials->accessKey(),
@@ -50,7 +50,7 @@ class SignatureV4 {
     array $params,
     string $contentHash,
     array $headers= [],
-    int $time= null
+    $time= null
   ): array {
     $requestDate= $this->datetime($time);
 
