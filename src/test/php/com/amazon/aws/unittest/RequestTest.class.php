@@ -116,4 +116,29 @@ class RequestTest {
       ->status()
     );
   }
+
+  #[Test]
+  public function transfer() {
+    $file= 'PNG...';
+    $s3= $this->endpoint('s3', [
+      '/target/upload.png' => [
+        'HTTP/1.1 200 OK',
+        'Content-Length: 0',
+        '',
+      ]
+    ]);
+
+    $transfer= $s3->in('eu-central-1')->using('bucket')->open('PUT', '/target/upload.png', [
+      'x-amz-content-sha256' => hash('sha256', $file),
+      'Content-Type'         => 'image/png',
+      'Content-Length'       => strlen($file),
+    ]);
+    $transfer->write($file);
+    $response= $transfer->finish();
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['Content-Length' => '0'], $response->headers());
+    Assert::equals('', $response->content());
+  }
 }
