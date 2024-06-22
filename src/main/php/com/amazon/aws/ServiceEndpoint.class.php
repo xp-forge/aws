@@ -14,11 +14,16 @@ use util\log\Traceable;
  * @test  com.amazon.aws.unittest.RequestSigningTest
  */
 class ServiceEndpoint implements Traceable {
+  private static $NO_CONTENT;
   private $service, $credentials, $signature, $userAgent, $connections, $marshalling;
   private $region= null;
   private $cat= null;
   private $base= '/';
   private $domain= null;
+
+  static function __static() {
+    self::$NO_CONTENT= hash(SignatureV4::HASH, '');
+  }
 
   /**
    * Creates a new AWS endpoint
@@ -167,7 +172,7 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.IOException
    */
-  public function open(string $method, string $target, array $headers= [], $time= null): Transfer {
+  public function open(string $method, string $target, array $headers, $hash= null, $time= null): Transfer {
     $host= $this->domain();
     $target= $this->base.ltrim($target, '/');
     $conn= ($this->connections)('https://'.$host.$target);
@@ -206,7 +211,7 @@ class ServiceEndpoint implements Traceable {
       $method,
       $target,
       $params,
-      hash(SignatureV4::HASH, $payload ?? ''),
+      $hash ?? $headers['x-amz-content-sha256'] ?? self::$NO_CONTENT,
       $signed,
       $time
     );
@@ -228,11 +233,17 @@ class ServiceEndpoint implements Traceable {
    */
   public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
     if (null === $payload) {
-      return $this->open($method, $target, $headers + ['Content-Length' => 0], $time)->finish();
+      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], self::$NO_CONTENT, $time);
     } else {
-      $transfer= $this->open($method, $target, $headers + ['Content-Length' => strlen($payload)], $time);
+      $transfer= $this->open(
+        $method,
+        $target,
+        $headers + ['Content-Length' => strlen($payload)],
+        hash(SignatureV4::HASH, $payload),
+        $time
+      );
       $transfer->write($payload);
-      return $transfer->finish();
     }
+    return $transfer->finish();
   }
 }
