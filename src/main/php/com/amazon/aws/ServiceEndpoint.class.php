@@ -157,7 +157,7 @@ class ServiceEndpoint implements Traceable {
       'GET',
       $link,
       $params,
-      'UNSIGNED-PAYLOAD',
+      SignatureV4::UNSIGNED,
       ['Host' => $host],
       $time
     );

@@ -12,6 +12,7 @@ use peer\http\HttpRequest;
 class SignatureV4 {
   const HASH= 'sha256';
   const ALGO= 'AWS4-HMAC-SHA256';
+  const UNSIGNED= 'UNSIGNED-PAYLOAD';
 
   private $credentials;
 
