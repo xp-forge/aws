@@ -19,12 +19,18 @@ use util\Secret;
 class FromEcs implements Provider {
   const DEFAULT_HOST= 'http://169.254.170.2';
 
-  private $conn;
+  private $conn, $userAgent;
   private $credentials= null;
 
   /** @param ?peer.HttpConnection $conn */
   public function __construct($conn= null) {
     $this->conn= $conn ?? new HttpConnection(self::DEFAULT_HOST);
+    $this->userAgent= sprintf(
+      'xp-aws/1.0.0 OS/%s/%s lang/php/%s',
+      php_uname('s'),
+      php_uname('r'),
+      PHP_VERSION
+    );
   }
 
   /** @return ?com.amazon.aws.Credentials */
@@ -48,6 +54,7 @@ class FromEcs implements Provider {
       $req->setHeader('Authorization', $token);
     }
 
+    $req->setHeader('User-Agent', $this->userAgent);
     try {
       $res= $this->conn->send($req);
     } catch (Throwable $t) {
