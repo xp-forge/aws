@@ -31,11 +31,11 @@ final class CredentialProvider implements Provider {
 
   /**
    * Returns default credential provider chain, checking, in the following order:
-   * 
+   *
    * 1. Environment variables
    * 2. Shared credentials and config files
    * 3. Amazon ECS container credentials
-   * 
+   *
    * If none of the above provide credentials, an exception is raised when invoking
    * the `credentials()` method.
    *
