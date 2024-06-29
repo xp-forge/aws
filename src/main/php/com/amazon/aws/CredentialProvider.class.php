@@ -40,9 +40,8 @@ final class CredentialProvider implements Provider {
    * the `credentials()` method.
    *
    * @see    https://docs.aws.amazon.com/sdk-for-kotlin/latest/developer-guide/credential-providers.html
-   * @return com.amazon.aws.credentials.Provider
    */
-  public static function default() {
+  public static function default(): Provider {
     return new self(
       new FromEnvironment(),
       new FromConfig(),
