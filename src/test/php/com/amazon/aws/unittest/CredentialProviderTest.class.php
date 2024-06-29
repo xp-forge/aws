@@ -323,12 +323,13 @@ class CredentialProviderTest {
 
   #[Test]
   public function chain_returns_first_non_null() {
-    $env= ['AWS_ACCESS_KEY_ID' => null, 'AWS_SECRET_ACCESS_KEY' => null];
-    with (new Exported($env), function() {
-      $credentials= new Credentials('key', 'secret');
-      $chain= new CredentialProvider(new FromEnvironment(), new FromGiven($credentials));
-      Assert::equals($credentials, $chain->credentials());
-    });
+    $credentials= new Credentials('key', 'secret');
+    $chain= new CredentialProvider(
+      new class() implements Provider { public function credentials() { return null; } },
+      new FromGiven($credentials)
+    );
+
+    Assert::equals($credentials, $chain->credentials());
   }
 
   #[Test]
