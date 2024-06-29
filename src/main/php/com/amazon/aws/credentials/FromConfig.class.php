@@ -14,6 +14,8 @@ use util\Secret;
  */
 class FromConfig implements Provider {
   private $file, $profile;
+  private $modified= null;
+  private $credentials;
 
   /**
    * Creates a new configuration source. Checks the `AWS_SHARED_CREDENTIALS_FILE`
@@ -40,17 +42,23 @@ class FromConfig implements Provider {
 
   /** @return ?com.amazon.aws.Credentials */
   public function credentials() {
-    if (!$this->file->exists()) return null;
+    if (!$this->file->exists()) return $this->credentials= null;
 
-    // Either check "profile [...]" or the default section
-    $config= parse_ini_file($this->file->getURI(), true, INI_SCANNER_RAW);
-    $section= $config['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? null;
-    if (null === $section) return null;
+    // Only read the underlying file if its modification time has changed
+    $modified= $this->file->lastModified();
+    if ($modified >= $this->modified) {
+      $this->modified= $modified;
 
-    return new Credentials(
-      $section['aws_access_key_id'],
-      new Secret($section['aws_secret_access_key']),
-      $section['aws_session_token'] ?? null
-    );
+      // Either check "profile [...]" or the default section
+      $config= parse_ini_file($this->file->getURI(), true, INI_SCANNER_RAW);
+      $section= $config['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? null;
+
+      $this->credentials= null === $section ? null : new Credentials(
+        $section['aws_access_key_id'],
+        new Secret($section['aws_secret_access_key']),
+        $section['aws_session_token'] ?? null
+      );
+    }
+    return $this->credentials;
   }
 }

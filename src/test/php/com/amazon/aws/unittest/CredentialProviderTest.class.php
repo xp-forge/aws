@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\unittest;
 
-use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs};
+use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs, Provider};
 use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
@@ -8,17 +8,27 @@ use test\{Assert, Expect, Test, Values};
 use util\NoSuchElementException;
 
 class CredentialProviderTest {
-  const ECS_CREDENTIALS_RESPONSE= [
-    'HTTP/1.1 200 OK',
-    'Content-Type: application/json',
-    '',
-    '{
-      "AccessKeyId": "key",
-      "SecretAccessKey": "secret",
-      "Token": "session",
-      "Expiration": "2024-06-29T13:10:28Z"
-    }'
-  ];
+
+  /**
+   * Returns ECS credentials response
+   *
+   * @param  int $expireIn Number of seconds
+   * @param  string $token
+   * @return string[]
+   */
+  private function ecsCredentials($expireIn= 3600, $token= '"session"') {
+    return [
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      '',
+      '{
+        "AccessKeyId": "key",
+        "SecretAccessKey": "secret",
+        "Token": '.$token.',
+        "Expiration": "'.gmdate('Y-m-d\TH:i:s\Z', time() + $expireIn).'"
+      }'
+    ];
+  }
 
   #[Test]
   public function given() {
@@ -136,6 +146,40 @@ class CredentialProviderTest {
     Assert::null((new FromConfig('/file-does-not-exist'))->credentials());
   }
 
+  #[Test]
+  public function from_config_cached() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "aws_access_key_id = key\n".
+      "aws_secret_access_key = secret\n"
+    );
+    $provider= new FromConfig($file);
+    $first= $provider->credentials();
+    $second= $provider->credentials();
+
+    Assert::equals($first, $second);
+  }
+
+  #[Test]
+  public function from_config_cache_checks_for_modifications() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "aws_access_key_id = key\n".
+      "aws_secret_access_key = secret\n"
+    );
+    $provider= new FromConfig($file);
+    $first= $provider->credentials();
+
+    $file->containing(
+      "[default]\n".
+      "aws_access_key_id = modifed\n".
+      "aws_secret_access_key = secret\n"
+    );
+    $second= $provider->credentials();
+
+    Assert::notEquals($first, $second);
+  }
+
   #[Test, Values([['/get-credentials', null], [null, 'http://localhost/get-credentials']])]
   public function ecs_api($relative, $full) {
     $env= [
@@ -143,11 +187,25 @@ class CredentialProviderTest {
       'AWS_CONTAINER_CREDENTIALS_FULL_URI'     => $full,
     ];
     with (new Exported($env), function() {
-      $conn= new TestConnection(['/get-credentials' => self::ECS_CREDENTIALS_RESPONSE]);
+      $conn= new TestConnection(['/get-credentials' => $this->ecsCredentials()]);
       $credentials= (new FromEcs($conn))->credentials();
 
       Assert::equals('key', $credentials->accessKey());
       Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals('session', $credentials->sessionToken());
+    });
+  }
+
+  #[Test, Values([['null', null], ['"session"', 'session']])]
+  public function ecs_api_with($token, $session) {
+    $env= ['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' => '/get-credentials'];
+    with (new Exported($env), function() use($token, $session) {
+      $conn= new TestConnection(['/get-credentials' => $this->ecsCredentials(0, $token)]);
+      $credentials= (new FromEcs($conn))->credentials();
+
+      Assert::equals('key', $credentials->accessKey());
+      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals($session, $credentials->sessionToken());
     });
   }
 
@@ -164,15 +222,12 @@ class CredentialProviderTest {
       $conn= new TestConnection([
         '/get-credentials' => function($req) {
           return in_array('Basic Test', $req->headers['Authorization'] ?? [])
-            ? self::ECS_CREDENTIALS_RESPONSE
+            ? $this->ecsCredentials()
             : ['HTTP/1.1 403', '']
           ;
         }
       ]);
-      $credentials= (new FromEcs($conn))->credentials();
-
-      Assert::equals('key', $credentials->accessKey());
-      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals('key', (new FromEcs($conn))->credentials()->accessKey());
     });
   }
 
@@ -188,15 +243,13 @@ class CredentialProviderTest {
       $conn= new TestConnection([
         '/get-credentials' => function($req) {
           return in_array('Basic Test', $req->headers['Authorization'] ?? [])
-            ? self::ECS_CREDENTIALS_RESPONSE
+            ? $this->ecsCredentials()
             : ['HTTP/1.1 403', '']
           ;
         }
       ]);
-      $credentials= (new FromEcs($conn))->credentials();
 
-      Assert::equals('key', $credentials->accessKey());
-      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals('key', (new FromEcs($conn))->credentials()->accessKey());
     });
   }
 
@@ -227,13 +280,33 @@ class CredentialProviderTest {
   }
 
   #[Test]
-  public function all_provider() {
-    $env= ['AWS_ACCESS_KEY_ID' => 'key', 'AWS_SECRET_ACCESS_KEY' => 'secret'];
-    with (new Exported($env), function() {
-      $credentials= (new CredentialProvider(new FromEnvironment()))->credentials();
+  public function ecs_api_cached() {
+    with (new Exported(['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' => '/get-credentials']), function() {
+      $conn= new TestConnection(['/get-credentials' => function() {
+        static $times= 0;
+        return 0 === $times++ ? $this->ecsCredentials() : ['HTTP/1.1 500', ''];
+      }]);
+      $provider= new FromEcs($conn);
+      $first= $provider->credentials();
+      $second= $provider->credentials();
 
-      Assert::equals('key', $credentials->accessKey());
-      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals($first, $second);
+    });
+  }
+
+  #[Test]
+  public function ecs_api_cache_checks_for_expiration() {
+    with (new Exported(['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' => '/get-credentials']), function() {
+      $conn= new TestConnection(['/get-credentials' => function() {
+        static $times= 0;
+        return 0 === $times++ ? $this->ecsCredentials(-1) : ['HTTP/1.1 500', ''];
+      }]);
+      $provider= new FromEcs($conn);
+      $provider->credentials();
+
+      Assert::throws(IllegalStateException::class, function() use($provider) {
+        $provider->credentials();
+      });
     });
   }
 
@@ -262,15 +335,12 @@ class CredentialProviderTest {
   public function default_provider_chain() {
     $env= ['AWS_ACCESS_KEY_ID' => 'key', 'AWS_SECRET_ACCESS_KEY' => 'secret'];
     with (new Exported($env), function() {
-      $credentials= CredentialProvider::default()->credentials();
-
-      Assert::equals('key', $credentials->accessKey());
-      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals('key', CredentialProvider::default()->credentials()->accessKey());
     });
   }
 
   #[Test, Expect(NoSuchElementException::class)]
-  public function default_provider_chain_raises() {
+  public function default_provider_chain_raises_when_no_credentials_are_provided() {
     $env= [
       'AWS_ACCESS_KEY_ID'                      => null,
       'AWS_SECRET_ACCESS_KEY'                  => null,

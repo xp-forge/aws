@@ -20,6 +20,7 @@ class FromEcs implements Provider {
   const DEFAULT_HOST= 'http://169.254.170.2';
 
   private $conn;
+  private $credentials= null;
 
   /** @param ?peer.HttpConnection $conn */
   public function __construct($conn= null) {
@@ -28,18 +29,19 @@ class FromEcs implements Provider {
 
   /** @return ?com.amazon.aws.Credentials */
   public function credentials() {
-    $req= $this->conn->create(new HttpRequest());
+    if (null !== $this->credentials && !$this->credentials->expired()) return $this->credentials;
 
     // Check AWS_CONTAINER_CREDENTIALS_*
     if (null !== ($relative= Environment::variable('AWS_CONTAINER_CREDENTIALS_RELATIVE_URI', null))) {
+      $req= $this->conn->create(new HttpRequest());
       $req->setTarget($relative);
     } else if (null !== ($uri= Environment::variable('AWS_CONTAINER_CREDENTIALS_FULL_URI', null))) {
-      $req->setUrl(new URL($uri));
+      $req= new HttpRequest(new URL($uri));
     } else {
-      return null;
+      return $this->credentials= null;
     }
 
-    // Append authorizatio from AWS_CONTAINER_AUTHORIZATION_TOKEN_*, if existant
+    // Append authorization from AWS_CONTAINER_AUTHORIZATION_TOKEN_*, if existant
     if (null !== ($file= Environment::variable('AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE', null))) {
       $req->setHeader('Authorization', rtrim(file_get_contents($file), "\r\n"));
     } else if (null !== ($token= Environment::variable('AWS_CONTAINER_AUTHORIZATION_TOKEN', null))) {
@@ -57,10 +59,10 @@ class FromEcs implements Provider {
     }
 
     $credentials= Json::read(new StreamInput($res->in()));
-    return new Credentials(
+    return $this->credentials= new Credentials(
       $credentials['AccessKeyId'],
       $credentials['SecretAccessKey'],
-      $credentials['Token'],
+      $credentials['Token'] ?? null,
       $credentials['Expiration'] ?? null
     );
   }

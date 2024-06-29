@@ -45,7 +45,7 @@ class Credentials implements Value {
    * @return bool
    */
   public function expired() {
-    return null === $this->expiration ? false : $this->expiration <= time();
+    return null !== $this->expiration && $this->expiration <= time();
   }
 
   /** @return string */
