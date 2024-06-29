@@ -47,6 +47,38 @@ $link= $api->in('eu-central-1')->using('my-bucket')->sign('/path/to/resource.png
 Console::writeLine($link);
 ```
 
+Streaming uploads to S3
+-----------------------
+
+```php
+use com\amazon\aws\api\SignatureV4;
+use com\amazon\aws\{ServiceEndpoint, Credentials};
+use io\File;
+use util\cmd\Console;
+
+$credentials= new Credentials(/* ... */);
+
+$file= new File('large.txt');
+$file->open(File::READ);
+
+try {
+  $s3= (new ServiceEndpoint('s3', $credentials))->in('eu-central-1')->using('my-bucket');
+  $transfer= $s3->open('PUT', 'target/'.$file->filename, [
+    'x-amz-content-sha256' => SignatureV4::UNSIGNED, // Or calculate from file
+    'Content-Type'         => 'text/plain',
+    'Content-Length'       => $file->size(),
+  ]);
+  while (!$file->eof()) {
+    $transfer->write($file->read());
+  }
+  $response= $transfer->finish();
+
+  Console::writeLine($response);
+} finally {
+  $file->close();
+}
+```
+
 See also
 --------
 * [AWS Lambda for XP Framework](https://github.com/xp-forge/lambda)
