@@ -34,15 +34,14 @@ Sharing a S3 resource
 ---------------------
 
 ```php
-use com\amazon\aws\{ServiceEndpoint, Credentials};
+use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
 use util\cmd\Console;
 
-$api= new ServiceEndpoint('s3', new Credentials(
-  getenv('AWS_ACCESS_KEY_ID'),
-  getenv('AWS_SECRET_ACCESS_KEY'),
-  getenv('AWS_SESSION_TOKEN')
-));
-$link= $api->in('eu-central-1')->using('my-bucket')->sign('/path/to/resource.png', timeout: 180);
+$s3= (new ServiceEndpoint('s3', CredentialProvider::default()->credentials()))
+  ->in('eu-central-1')
+  ->using('my-bucket')
+;
+$link= $s3->sign('/path/to/resource.png', timeout: 180);
 
 Console::writeLine($link);
 ```
@@ -52,17 +51,19 @@ Streaming uploads to S3
 
 ```php
 use com\amazon\aws\api\SignatureV4;
-use com\amazon\aws\{ServiceEndpoint, Credentials};
+use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
 use io\File;
 use util\cmd\Console;
 
-$credentials= new Credentials(/* ... */);
+$s3= (new ServiceEndpoint('s3', CredentialProvider::default()->credentials()))
+  ->in('eu-central-1')
+  ->using('my-bucket')
+;
 
 $file= new File('large.txt');
 $file->open(File::READ);
 
 try {
-  $s3= (new ServiceEndpoint('s3', $credentials))->in('eu-central-1')->using('my-bucket');
   $transfer= $s3->open('PUT', 'target/'.$file->filename, [
     'x-amz-content-sha256' => SignatureV4::UNSIGNED, // Or calculate from file
     'Content-Type'         => 'text/plain',

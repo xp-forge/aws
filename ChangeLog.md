@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Merged PR #9: Implement credential providers. Initial support for these
+  providers: *Environment variables*, *Shared credentials and config files*
+  and *Amazon ECS container credentials*.
+  (@thekid)
+
 ## 1.7.0 / 2024-06-29
 
 * Merged PR #8: Add possibility to stream requests to AWS endpoints. Useful
