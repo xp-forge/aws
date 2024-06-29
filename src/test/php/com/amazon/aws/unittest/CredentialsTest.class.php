@@ -1,7 +1,7 @@
 <?php namespace com\amazon\aws\unittest;
 
 use com\amazon\aws\Credentials;
-use test\{Assert, Test};
+use test\{Assert, Test, Values};
 use util\Secret;
 
 class CredentialsTest {
@@ -43,5 +43,30 @@ class CredentialsTest {
   public function compare_to_another_object() {
     $credentials= new Credentials('key', 'secret');
     Assert::equals(1, $credentials->compareTo($this));
+  }
+
+  #[Test, Values([null, -1, 0, 1])]
+  public function expiration($time) {
+    Assert::equals($time, (new Credentials('key', 'secret', null, $time))->expiration());
+  }
+
+  #[Test]
+  public function without_expiration() {
+    Assert::false((new Credentials('key', 'secret'))->expired());
+  }
+
+  #[Test]
+  public function not_expired() {
+    Assert::false((new Credentials('key', 'secret', null, time() + 1))->expired());
+  }
+
+  #[Test]
+  public function expired_now() {
+    Assert::true((new Credentials('key', 'secret', null, time()))->expired());
+  }
+
+  #[Test]
+  public function expired_one_second_ago() {
+    Assert::true((new Credentials('key', 'secret', null, time() - 1))->expired());
   }
 }
