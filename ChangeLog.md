@@ -3,6 +3,12 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.7.0 / 2024-06-29
+
+* Merged PR #8: Add possibility to stream requests to AWS endpoints. Useful
+  for transferring large payloads without blocking, e.g. S3 uploads.
+  (@thekid)
+
 ## 1.6.0 / 2024-03-24
 
 * Made compatible with XP 12 - @thekid
