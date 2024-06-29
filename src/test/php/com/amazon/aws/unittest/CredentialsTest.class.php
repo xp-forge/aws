@@ -46,12 +46,12 @@ class CredentialsTest {
   }
 
   #[Test, Values([null, -1, 0, 1])]
-  public function expiry_time($time) {
-    Assert::equals($time, (new Credentials('key', 'secret', null, $time))->expiryTime());
+  public function expiration($time) {
+    Assert::equals($time, (new Credentials('key', 'secret', null, $time))->expiration());
   }
 
   #[Test]
-  public function without_expiry() {
+  public function without_expiration() {
     Assert::false((new Credentials('key', 'secret'))->expired());
   }
 

@@ -60,7 +60,8 @@ class FromEcs implements Provider {
     return new Credentials(
       $credentials['AccessKeyId'],
       $credentials['SecretAccessKey'],
-      $credentials['Token']
+      $credentials['Token'],
+      $credentials['Expiration'] ?? null
     );
   }
 }
