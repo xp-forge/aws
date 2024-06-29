@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws;
 
-use com\amazon\aws\api\{Resource, Response, SignatureV4};
+use com\amazon\aws\api\{Resource, Response, SignatureV4, Transfer};
 use peer\http\{HttpConnection, HttpRequest};
 use util\data\Marshalling;
 use util\log\Traceable;
@@ -14,11 +14,16 @@ use util\log\Traceable;
  * @test  com.amazon.aws.unittest.RequestSigningTest
  */
 class ServiceEndpoint implements Traceable {
+  private static $NO_CONTENT;
   private $service, $credentials, $signature, $userAgent, $connections, $marshalling;
   private $region= null;
   private $cat= null;
   private $base= '/';
   private $domain= null;
+
+  static function __static() {
+    self::$NO_CONTENT= hash(SignatureV4::HASH, '');
+  }
 
   /**
    * Creates a new AWS endpoint
@@ -152,7 +157,7 @@ class ServiceEndpoint implements Traceable {
       'GET',
       $link,
       $params,
-      'UNSIGNED-PAYLOAD',
+      SignatureV4::UNSIGNED,
       ['Host' => $host],
       $time
     );
@@ -163,11 +168,11 @@ class ServiceEndpoint implements Traceable {
   }
 
   /**
-   * Sends a request and returns the response
+   * Opens a request and returns a `Transfer` instance for writing data to
    *
    * @throws io.IOException
    */
-  public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
+  public function open(string $method, string $target, array $headers, $hash= null, $time= null): Transfer {
     $host= $this->domain();
     $target= $this->base.ltrim($target, '/');
     $conn= ($this->connections)('https://'.$host.$target);
@@ -177,7 +182,7 @@ class ServiceEndpoint implements Traceable {
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
     $request->setTarget($target);
-    $request->addHeaders($headers + ['Content-Length' => null === $payload ? 0 : strlen($payload)]);
+    $request->addHeaders($headers);
 
     // Compile headers from given host and time including our user agent
     $signed= [
@@ -206,7 +211,7 @@ class ServiceEndpoint implements Traceable {
       $method,
       $target,
       $params,
-      hash(SignatureV4::HASH, $payload ?? ''),
+      $hash ?? $headers['x-amz-content-sha256'] ?? self::$NO_CONTENT,
       $signed,
       $time
     );
@@ -218,13 +223,27 @@ class ServiceEndpoint implements Traceable {
       $signature['signature']
     )]);
 
+    return new Transfer($conn, $request, $this->marshalling);
+  }
+
+  /**
+   * Sends a request and returns the response
+   *
+   * @throws io.IOException
+   */
+  public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
     if (null === $payload) {
-      $r= $conn->send($request);
+      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], self::$NO_CONTENT, $time);
     } else {
-      $stream= $conn->open($request);
-      $stream->write($payload);
-      $r= $conn->finish($stream);
-    } 
-    return new Response($r->statusCode(), $r->message(), $r->headers(), $r->in(), $this->marshalling);
+      $transfer= $this->open(
+        $method,
+        $target,
+        $headers + ['Content-Length' => strlen($payload)],
+        hash(SignatureV4::HASH, $payload),
+        $time
+      );
+      $transfer->write($payload);
+    }
+    return $transfer->finish();
   }
 }

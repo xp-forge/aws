@@ -7,10 +7,10 @@ class RequestSigningTest {
   const TEST_TIME= 1678835684;
 
   /** Executes a given request handler */
-  private function execute($handler, $session= null) {
+  private function execute($handler, $payload= null, $session= null) {
     return (new ServiceEndpoint('test', new Credentials('key', 'secret', $session)))
       ->connecting(function($uri) use($handler) { return new TestConnection(['/' => $handler]); })
-      ->request('GET', '/', ['User-Agent' => 'xp-aws/1.0.0 OS/Test/1.0 lang/php/8.3.0'], null, self::TEST_TIME)
+      ->request('GET', '/', ['User-Agent' => 'xp-aws/1.0.0 OS/Test/1.0 lang/php/8.3.0'], $payload, self::TEST_TIME)
     ;
   }
 
@@ -59,6 +59,20 @@ class RequestSigningTest {
   }
 
   #[Test]
+  public function authorization_with_payload() {
+    $handler= function($request) {
+      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
+    };
+
+    Assert::equals(
+      'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
+      'SignedHeaders=host;x-amz-date;x-amz-user-agent, '.
+      'Signature=0665b5801ab285d284e1bd0b0be75083768abe1c9bc6920c1d69dfb0765d48c3',
+      $this->execute($handler, 'Test')->content()
+    );
+  }
+
+  #[Test]
   public function authorization_with_session() {
     $handler= function($request) {
       return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
@@ -68,7 +82,7 @@ class RequestSigningTest {
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=host;x-amz-date;x-amz-security-token;x-amz-user-agent, '.
       'Signature=c026606276b2854bcf04371f086c1e6339dbd01ce3ac04da51566521e7afc87f',
-      $this->execute($handler, 'session')->content()
+      $this->execute($handler, null, 'session')->content()
     );
   }
 }
