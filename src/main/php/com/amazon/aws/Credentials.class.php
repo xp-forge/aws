@@ -5,7 +5,7 @@ use util\Secret;
 
 /** @test com.amazon.aws.unittest.CredentialsTest */
 class Credentials implements Value {
-  private $accessKey, $secretKey, $sessionToken;
+  private $accessKey, $secretKey, $sessionToken, $expiryTime;
 
   /**
    * Creates a new instance
@@ -13,11 +13,13 @@ class Credentials implements Value {
    * @param  string $accessKey
    * @param  string|util.Secret $secretKey
    * @param  ?string $sessionToken
+   * @param  ?int $expiryTime
    */
-  public function __construct($accessKey, $secretKey, $sessionToken= null) {
+  public function __construct($accessKey, $secretKey, $sessionToken= null, $expiryTime= null) {
     $this->accessKey= $accessKey;
     $this->secretKey= $secretKey instanceof Secret ? $secretKey : new Secret($secretKey);
     $this->sessionToken= $sessionToken;
+    $this->expiryTime= $expiryTime;
   }
 
   /** @return string */
@@ -29,9 +31,21 @@ class Credentials implements Value {
   /** @return ?string */
   public function sessionToken() { return $this->sessionToken; }
 
+  /** @return ?int */
+  public function expiryTime() { return $this->expiryTime; }
+
   /** @return string */
   public function hashCode() {
     return 'C'.sha1($this->accessKey.$this->secretKey->reveal().$this->sessionToken);
+  }
+
+  /**
+   * Check whether these credentials have expired
+   *
+   * @return bool
+   */
+  public function expired() {
+    return null === $this->expiryTime ? false : $this->expiryTime <= time();
   }
 
   /** @return string */
