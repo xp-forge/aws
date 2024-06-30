@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Added `CredentialProvider::none()` which never provides any credentials
+  (@thekid)
 * Merged PR #9: Implement credential providers. Initial support for these
   providers: *Environment variables*, *Shared credentials and config files*
   and *Amazon ECS container credentials*.

@@ -312,7 +312,7 @@ class CredentialProviderTest {
 
   #[Test]
   public function chain_returns_null_when_empty() {
-    Assert::null((new CredentialProvider())->credentials());
+    Assert::null(CredentialProvider::none()->credentials());
   }
 
   #[Test]

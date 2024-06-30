@@ -5,16 +5,7 @@ use util\NoSuchElementException;
 
 /** @test com.amazon.aws.unittest.CredentialProviderTest */
 final class CredentialProvider implements Provider {
-  private static $raise;
   private $delegates;
-
-  static function __static() {
-    self::$raise= new class() implements Provider {
-      public function credentials() {
-        throw new NoSuchElementException('None of the credential providers returned credentials');
-      }
-    };
-  }
 
   /** Creates a new provider which queries all the given delegates */
   public function __construct(Provider... $delegates) {
@@ -27,6 +18,17 @@ final class CredentialProvider implements Provider {
       if (null !== ($credentials= $delegate->credentials())) return $credentials;
     }
     return null;
+  }
+
+  /** Returns a credential provider which never provides any credentials */
+  public static function none(): Provider {
+    static $none= null;
+
+    return $none ?? $none= new class() implements Provider {
+      public function credentials() {
+        return null;
+      }
+    };
   }
 
   /**
@@ -42,11 +44,17 @@ final class CredentialProvider implements Provider {
    * @see    https://docs.aws.amazon.com/sdk-for-kotlin/latest/developer-guide/credential-providers.html
    */
   public static function default(): Provider {
+    static $raise= null;
+
     return new self(
       new FromEnvironment(),
       new FromConfig(),
       new FromEcs(),
-      self::$raise
+      $raise ?? $raise= new class() implements Provider {
+        public function credentials() {
+          throw new NoSuchElementException('None of the credential providers returned credentials');
+        }
+      }
     );
   }
 }
