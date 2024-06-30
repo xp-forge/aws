@@ -14,16 +14,11 @@ use util\log\Traceable;
  * @test  com.amazon.aws.unittest.RequestSigningTest
  */
 class ServiceEndpoint implements Traceable {
-  private static $NO_CONTENT;
   private $service, $credentials, $signature, $userAgent, $connections, $marshalling;
   private $region= null;
   private $cat= null;
   private $base= '/';
   private $domain= null;
-
-  static function __static() {
-    self::$NO_CONTENT= hash(SignatureV4::HASH, '');
-  }
 
   /**
    * Creates a new AWS endpoint
@@ -211,7 +206,7 @@ class ServiceEndpoint implements Traceable {
       $method,
       $target,
       $params,
-      $hash ?? $headers['x-amz-content-sha256'] ?? self::$NO_CONTENT,
+      $hash ?? $headers['x-amz-content-sha256'] ?? SignatureV4::NO_PAYLOAD,
       $signed,
       $time
     );
@@ -233,7 +228,7 @@ class ServiceEndpoint implements Traceable {
    */
   public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
     if (null === $payload) {
-      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], self::$NO_CONTENT, $time);
+      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], SignatureV4::NO_PAYLOAD, $time);
     } else {
       $transfer= $this->open(
         $method,

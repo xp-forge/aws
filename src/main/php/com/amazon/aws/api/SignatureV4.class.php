@@ -12,6 +12,8 @@ use peer\http\HttpRequest;
 class SignatureV4 {
   const HASH= 'sha256';
   const ALGO= 'AWS4-HMAC-SHA256';
+
+  const NO_PAYLOAD= 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'; // hash('sha256', '')
   const UNSIGNED= 'UNSIGNED-PAYLOAD';
 
   private $credentials;

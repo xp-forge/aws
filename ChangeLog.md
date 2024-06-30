@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Added the constant `SignatureV4::NO_PAYLOAD` which is equal to the pre-
+  calculated sha256 hash of an empty string
+  (@thekid)
+
 ## 1.8.0 / 2024-06-30
 
 * Added `CredentialProvider::none()` which never provides any credentials
