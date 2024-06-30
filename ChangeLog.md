@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.8.0 / 2024-06-30
+
 * Added `CredentialProvider::none()` which never provides any credentials
   (@thekid)
 * Merged PR #9: Implement credential providers. Initial support for these
