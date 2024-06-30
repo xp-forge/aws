@@ -74,6 +74,34 @@ class RequestSigningTest {
   }
 
   #[Test]
+  public function authorization_includes_x_amz_header() {
+    $handler= function($request) {
+      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
+    };
+
+    Assert::equals(
+      'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
+      'SignedHeaders=host;x-amz-copy-source;x-amz-date;x-amz-user-agent, '.
+      'Signature=b904172ce6d132a5741cab2c73226c48a77b46886be83381409627a1f02f5822',
+      $this->execute($handler, 'Test', ['x-amz-copy-source' => '/bucket/file.txt'])->content()
+    );
+  }
+
+  #[Test]
+  public function authorization_includes_content_type() {
+    $handler= function($request) {
+      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
+    };
+
+    Assert::equals(
+      'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
+      'SignedHeaders=content-type;host;x-amz-date;x-amz-user-agent, '.
+      'Signature=dd3723587bbd8a6249f644d68619a46b8e62d305f414816c7feb7e4ad411dedf',
+      $this->execute($handler, 'Test', ['Content-Type' => 'text/plain'])->content()
+    );
+  }
+
+  #[Test]
   public function authorization_with_session() {
     $handler= function($request) {
       return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];

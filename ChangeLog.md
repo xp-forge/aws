@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 1.8.1 / 2024-06-30
+
+* Fixed issue #10: There were headers present in the request which were
+  not signed
+  (@thekid)
 * Added the constant `SignatureV4::NO_PAYLOAD` which is equal to the pre-
   calculated sha256 hash of an empty string
   (@thekid)

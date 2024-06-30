@@ -191,6 +191,13 @@ class ServiceEndpoint implements Traceable {
       $signed['X-Amz-Security-Token']= $token;
     }
 
+    // Include Content-Type and any x-amz-* headers
+    foreach ($headers as $name => $value) {
+      if (0 === strncasecmp($name, 'X-Amz-', 6) || 0 === strncasecmp($name, 'Content-Type', 12)) {
+        $signed[$name]= $value;
+      }
+    }
+
     // Parse query string parameters
     if (false === ($p= strpos($target, '?'))) {
       $params= [];
