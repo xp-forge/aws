@@ -77,7 +77,7 @@ class ServiceEndpoint implements Traceable {
 
   /** @return com.amazon.aws.Credentials */
   public function credentials() {
-    return $this->auth instanceof Credentials ? $this->auth : ($this->auth)();
+    return $this->auth instanceof Credentials ? $this->auth : cast(($this->auth)(), Credentials::class);
   }
 
   /** @return ?string */
