@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.0.0 / 2024-07-05
+
 * **Heads up**: Refactored `com.amazon.aws.credentials.Provider` from an
   interface to an abstract base class!
   (@thekid)
