@@ -4,7 +4,7 @@ use com\amazon\aws\credentials\{FromEnvironment, FromConfig, FromEcs, Provider};
 use util\NoSuchElementException;
 
 /** @test com.amazon.aws.unittest.CredentialProviderTest */
-final class CredentialProvider implements Provider {
+final class CredentialProvider extends Provider {
   private $delegates;
 
   /** Creates a new provider which queries all the given delegates */
@@ -20,11 +20,32 @@ final class CredentialProvider implements Provider {
     return null;
   }
 
+  /** @return self */
+  public function orThrow() {
+    $throwing= self::throwing();
+    if (in_array($throwing, $this->delegates)) return $this;
+
+    $clone= clone $this;
+    $clone->delegates[]= $throwing;
+    return $clone;
+  }
+
+  /** Returns a credential provider which throws an exception */
+  public static function throwing(): Provider {
+    static $throwing= null;
+
+    return $throwing ?? $throwing= new class() extends Provider {
+      public function credentials() {
+        throw new NoSuchElementException('None of the credential providers returned credentials');
+      }
+    };
+  }
+
   /** Returns a credential provider which never provides any credentials */
   public static function none(): Provider {
     static $none= null;
 
-    return $none ?? $none= new class() implements Provider {
+    return $none ?? $none= new class() extends Provider {
       public function credentials() {
         return null;
       }
@@ -38,23 +59,17 @@ final class CredentialProvider implements Provider {
    * 2. Shared credentials and config files
    * 3. Amazon ECS container credentials
    *
-   * If none of the above provide credentials, an exception is raised when invoking
+   * If none of the above provide credentials, an exception is thrown when invoking
    * the `credentials()` method.
    *
    * @see    https://docs.aws.amazon.com/sdk-for-kotlin/latest/developer-guide/credential-providers.html
    */
   public static function default(): Provider {
-    static $raise= null;
-
     return new self(
       new FromEnvironment(),
       new FromConfig(),
       new FromEcs(),
-      $raise ?? $raise= new class() implements Provider {
-        public function credentials() {
-          throw new NoSuchElementException('None of the credential providers returned credentials');
-        }
-      }
+      self::throwing()
     );
   }
 }

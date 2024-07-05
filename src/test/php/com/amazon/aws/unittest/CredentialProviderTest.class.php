@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\unittest;
 
-use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs, Provider};
+use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs};
 use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
@@ -316,6 +316,25 @@ class CredentialProviderTest {
   }
 
   #[Test]
+  public function chain_throwing() {
+    Assert::throws(NoSuchElementException::class, function() {
+      CredentialProvider::throwing()->credentials();
+    });
+  }
+
+  #[Test]
+  public function chain_or_throws() {
+    $provider= new CredentialProvider();
+    Assert::true($provider !== $provider->orThrow());
+  }
+
+  #[Test]
+  public function chain_default_throws() {
+    $provider= CredentialProvider::default();
+    Assert::true($provider === $provider->orThrow());
+  }
+
+  #[Test]
   public function chain_returns_given() {
     $credentials= new Credentials('key', 'secret');
     Assert::equals($credentials, (new CredentialProvider(new FromGiven($credentials)))->credentials());
@@ -325,7 +344,7 @@ class CredentialProviderTest {
   public function chain_returns_first_non_null() {
     $credentials= new Credentials('key', 'secret');
     $chain= new CredentialProvider(
-      new class() implements Provider { public function credentials() { return null; } },
+      CredentialProvider::none(),
       new FromGiven($credentials)
     );
 

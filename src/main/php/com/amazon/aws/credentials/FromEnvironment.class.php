@@ -11,7 +11,7 @@ use util\Secret;
  * @see   https://docs.aws.amazon.com/sdkref/latest/guide/environment-variables.html
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
-class FromEnvironment implements Provider {
+class FromEnvironment extends Provider {
 
   /** @return ?com.amazon.aws.Credentials */
   public function credentials() {
