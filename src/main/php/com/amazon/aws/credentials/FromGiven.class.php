@@ -3,7 +3,7 @@
 use com\amazon\aws\Credentials;
 
 /** @test com.amazon.aws.unittest.CredentialProviderTest */
-class FromGiven implements Provider {
+class FromGiven extends Provider {
   private $credentials;
 
   public function __construct(Credentials $credentials) {

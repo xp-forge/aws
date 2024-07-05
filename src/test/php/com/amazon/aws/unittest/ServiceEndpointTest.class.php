@@ -1,8 +1,10 @@
 <?php namespace com\amazon\aws\unittest;
 
 use com\amazon\aws\api\Resource;
-use com\amazon\aws\{ServiceEndpoint, Credentials};
-use test\{Assert, Before, Test, Values};
+use com\amazon\aws\credentials\FromGiven;
+use com\amazon\aws\{ServiceEndpoint, Credentials, CredentialProvider};
+use lang\IllegalArgumentException;
+use test\{Assert, Before, Expect, Test, Values};
 
 class ServiceEndpointTest {
   private $credentials;
@@ -25,6 +27,23 @@ class ServiceEndpointTest {
   #[Test]
   public function credentials() {
     Assert::equals($this->credentials, (new ServiceEndpoint('lambda', $this->credentials))->credentials());
+  }
+
+  #[Test]
+  public function credentials_function() {
+    $function= function() { return $this->credentials; };
+    Assert::equals($this->credentials, (new ServiceEndpoint('lambda', $function))->credentials());
+  }
+
+  #[Test]
+  public function credentials_provider() {
+    $provider= new CredentialProvider(new FromGiven($this->credentials));
+    Assert::equals($this->credentials, (new ServiceEndpoint('lambda', $provider))->credentials());
+  }
+
+  #[Test, Expect(class: IllegalArgumentException::class, message: '/Expected .+, have void/')]
+  public function credentials_not_callable() {
+    new ServiceEndpoint('lambda', null);
   }
 
   #[Test]

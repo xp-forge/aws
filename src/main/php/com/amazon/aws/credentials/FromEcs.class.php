@@ -16,7 +16,7 @@ use util\Secret;
  * @see   https://docs.aws.amazon.com/sdkref/latest/guide/feature-container-credentials.html
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
-class FromEcs implements Provider {
+class FromEcs extends Provider {
   const DEFAULT_HOST= 'http://169.254.170.2';
 
   private $conn, $userAgent;

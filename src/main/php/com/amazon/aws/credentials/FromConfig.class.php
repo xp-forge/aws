@@ -12,7 +12,7 @@ use util\Secret;
  * @see   https://docs.aws.amazon.com/sdkref/latest/guide/file-location.html
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
-class FromConfig implements Provider {
+class FromConfig extends Provider {
   private $file, $profile;
   private $modified= null;
   private $credentials;
