@@ -3,6 +3,13 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* **Heads up**: Refactored `com.amazon.aws.credentials.Provider` from an
+  interface to an abstract base class!
+  (@thekid)
+* Implemented PR #11: Accept credential functions in `ServiceEndpoint`
+  constructor
+  (@thekid)
+
 ## 1.8.1 / 2024-06-30
 
 * Fixed issue #10: There were headers present in the request which were
