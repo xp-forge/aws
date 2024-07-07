@@ -2,7 +2,7 @@
 
 use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs, FromSSO};
 use com\amazon\aws\{Credentials, CredentialProvider};
-use io\{File, TempFile, IOException};
+use io\{TempFile, IOException};
 use lang\IllegalStateException;
 use test\{Assert, Expect, Test, Values};
 use util\NoSuchElementException;
