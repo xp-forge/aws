@@ -173,6 +173,14 @@ class ServiceEndpoint implements Traceable {
     $conn= ($this->connections)('https://'.$host.$target);
     $conn->setTrace($this->cat);
 
+    // Parse and separate query string parameters
+    if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $target= substr($target, 0, $p);
+    }
+
     // Create and sign request
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
@@ -196,14 +204,6 @@ class ServiceEndpoint implements Traceable {
       if (0 === strncasecmp($name, 'X-Amz-', 6) || 0 === strncasecmp($name, 'Content-Type', 12)) {
         $signed[$name]= $value;
       }
-    }
-
-    // Parse query string parameters
-    if (false === ($p= strpos($target, '?'))) {
-      $params= [];
-    } else {
-      parse_str(substr($target, $p + 1), $params);
-      $target= substr($target, 0, $p);
     }
 
     // Calculate signature, then add headers including authorization
