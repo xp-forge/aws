@@ -48,7 +48,7 @@ Sharing a S3 resource
 use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
 use util\cmd\Console;
 
-$s3= (new ServiceEndpoint('s3', CredentialProvider::default()->credentials()))
+$s3= (new ServiceEndpoint('s3', CredentialProvider::default()))
   ->in('eu-central-1')
   ->using('my-bucket')
 ;
@@ -66,7 +66,7 @@ use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
 use io\File;
 use util\cmd\Console;
 
-$s3= (new ServiceEndpoint('s3', CredentialProvider::default()->credentials()))
+$s3= (new ServiceEndpoint('s3', CredentialProvider::default()))
   ->in('eu-central-1')
   ->using('my-bucket')
 ;
