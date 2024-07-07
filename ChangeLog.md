@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.0.1 / 2024-07-07
+
+* Fixed separating request parameters from request URI - @thekid
+
 ## 2.0.0 / 2024-07-05
 
 * **Heads up**: Refactored `com.amazon.aws.credentials.Provider` from an
