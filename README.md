@@ -30,6 +30,17 @@ Console::writeLine($r);
 Console::writeLine($r->value());
 ```
 
+Credential providers
+--------------------
+AWS credentials are stored in various places, depending on the runtime environment. The *CredentialProvider* class supports the following:
+
+* **Environment variables**: Uses `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and (if present) `AWS_SESSION_TOKEN`
+* **Shared credentials and config files**: Reads credentials from `~/.aws/config` and (if present) `~/.aws/credentials` (honoring alternative locations set via environment variables)
+* **SSO**: Uses configured SSO and the cached credentials created by AWS CLI's [login](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/sso/login.html) command
+* **Amazon ECS container credentials**: Uses the container API to fetch (and refresh, if necessary) the credentials
+
+See https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html
+
 Sharing a S3 resource
 ---------------------
 
