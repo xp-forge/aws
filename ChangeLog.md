@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.1.0 / 2024-07-07
+
+* Merged PR #12: Support for SSO credential provider - @thekid
+
 ## 2.0.1 / 2024-07-07
 
 * Fixed separating request parameters from request URI - @thekid
