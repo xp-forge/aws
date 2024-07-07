@@ -20,6 +20,10 @@ AWS Core change log
   constructor
   (@thekid)
 
+## 1.8.2 / 2024-07-07
+
+* Fixed separating request parameters from request URI - @thekid
+
 ## 1.8.1 / 2024-06-30
 
 * Fixed issue #10: There were headers present in the request which were
