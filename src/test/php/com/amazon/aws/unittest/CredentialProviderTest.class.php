@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\unittest;
 
-use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs};
+use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs, FromSSO};
 use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
@@ -8,6 +8,7 @@ use test\{Assert, Expect, Test, Values};
 use util\NoSuchElementException;
 
 class CredentialProviderTest {
+  const NON_EXISTANT= '/file-does-not-exist';
 
   /**
    * Returns ECS credentials response
@@ -26,6 +27,44 @@ class CredentialProviderTest {
         "SecretAccessKey": "secret",
         "Token": '.$token.',
         "Expiration": "'.gmdate('Y-m-d\TH:i:s\Z', time() + $expireIn).'"
+      }'
+    ];
+  }
+
+  /**
+   * Returns SSO cache file
+   *
+   * @param  int $expireIn Number of seconds
+   * @return io.File
+   */
+  private function ssoCache($expireIn= 3600) {
+    return (new TempFile())->containing('{
+      "startUrl": "https://example.awsapps.com/start/",
+      "region": "eu-central-1",
+      "accessToken": "access",
+      "expiresAt": "'.gmdate('Y-m-d\TH:i:s\Z', time() + $expireIn).'"
+    }');
+  }
+
+  /**
+   * Returns SSO credentials response
+   *
+   * @param  int $expireIn Number of seconds
+   * @param  string $token
+   * @return string[]
+   */
+  private function ssoCredentials($expireIn= 3600, $token= '"session"') {
+    return [
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      '',
+      '{
+        "roleCredentials": {
+          "accessKeyId": "key",
+          "secretAccessKey": "secret",
+          "sessionToken": '.$token.',
+          "expiration": '.((time() + $expireIn) * 1000).'
+        }
       }'
     ];
   }
@@ -57,17 +96,19 @@ class CredentialProviderTest {
 
   #[Test, Values([['', null], ['aws_session_token = token', 'token']])]
   public function from_config_with($session, $token) {
-    $file= (new TempFile())->containing(
-      "[default]\n".
-      "aws_access_key_id = key\n".
-      "aws_secret_access_key = secret\n".
-      "{$session}\n"
-    );
-    $credentials= (new FromConfig($file))->credentials();
+    with (new Exported(['AWS_PROFILE' => null]), function() use($session, $token) {
+      $file= (new TempFile())->containing(
+        "[default]\n".
+        "aws_access_key_id = key\n".
+        "aws_secret_access_key = secret\n".
+        "{$session}\n"
+      );
+      $credentials= (new FromConfig($file, self::NON_EXISTANT))->credentials();
 
-    Assert::equals('key', $credentials->accessKey());
-    Assert::equals('secret', $credentials->secretKey()->reveal());
-    Assert::equals($token, $credentials->sessionToken());
+      Assert::equals('key', $credentials->accessKey());
+      Assert::equals('secret', $credentials->secretKey()->reveal());
+      Assert::equals($token, $credentials->sessionToken());
+    });
   }
 
   #[Test, Values(['default', 'test'])]
@@ -80,7 +121,7 @@ class CredentialProviderTest {
       "aws_access_key_id = test\n".
       "aws_secret_access_key = test-secret\n"
     );
-    $credentials= (new FromConfig($file, $profile))->credentials();
+    $credentials= (new FromConfig($file, self::NON_EXISTANT, $profile))->credentials();
 
     Assert::equals($profile, $credentials->accessKey());
     Assert::equals($profile.'-secret', $credentials->secretKey()->reveal());
@@ -93,8 +134,8 @@ class CredentialProviderTest {
       "aws_access_key_id = key\n".
       "aws_secret_access_key = secret\n"
     );
-    with (new Exported(['AWS_SHARED_CREDENTIALS_FILE' => $file->getURI()]), function() {
-      $credentials= (new FromConfig())->credentials();
+    with (new Exported(['AWS_SHARED_CREDENTIALS_FILE' => $file->getURI(), 'AWS_PROFILE' => null]), function() {
+      $credentials= (new FromConfig(self::NON_EXISTANT, null))->credentials();
 
       Assert::equals('key', $credentials->accessKey());
       Assert::equals('secret', $credentials->secretKey()->reveal());
@@ -109,7 +150,7 @@ class CredentialProviderTest {
         "aws_access_key_id = test\n".
         "aws_secret_access_key = test-secret\n"
       );
-      $credentials= (new FromConfig($file))->credentials();
+      $credentials= (new FromConfig($file, self::NON_EXISTANT))->credentials();
 
       Assert::equals('test', $credentials->accessKey());
       Assert::equals('test-secret', $credentials->secretKey()->reveal());
@@ -124,7 +165,7 @@ class CredentialProviderTest {
         "aws_access_key_id = test\n".
         "aws_secret_access_key = test-secret\n"
       );
-      $credentials= (new FromConfig($file, 'test'))->credentials();
+      $credentials= (new FromConfig($file, self::NON_EXISTANT, 'test'))->credentials();
 
       Assert::equals('test', $credentials->accessKey());
       Assert::equals('test-secret', $credentials->secretKey()->reveal());
@@ -138,12 +179,12 @@ class CredentialProviderTest {
       "aws_access_key_id = default\n".
       "aws_secret_access_key = default\n"
     );
-    Assert::null((new FromConfig($file, 'test'))->credentials());
+    Assert::null((new FromConfig($file, self::NON_EXISTANT, 'test'))->credentials());
   }
 
   #[Test]
   public function from_non_existant_config() {
-    Assert::null((new FromConfig('/file-does-not-exist'))->credentials());
+    Assert::null((new FromConfig(self::NON_EXISTANT, self::NON_EXISTANT))->credentials());
   }
 
   #[Test]
@@ -153,7 +194,7 @@ class CredentialProviderTest {
       "aws_access_key_id = key\n".
       "aws_secret_access_key = secret\n"
     );
-    $provider= new FromConfig($file);
+    $provider= new FromConfig($file, self::NON_EXISTANT, 'default');
     $first= $provider->credentials();
     $second= $provider->credentials();
 
@@ -167,7 +208,7 @@ class CredentialProviderTest {
       "aws_access_key_id = key\n".
       "aws_secret_access_key = secret\n"
     );
-    $provider= new FromConfig($file);
+    $provider= new FromConfig($file, self::NON_EXISTANT, 'default');
     $first= $provider->credentials();
 
     $file->containing(
@@ -310,6 +351,24 @@ class CredentialProviderTest {
     });
   }
 
+  #[Test, Values([['null', null], ['"token"', 'token']])]
+  public function sso_with($token, $session) {
+    $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials(3600, $token)]);
+    $provider= new FromSSO(
+      'https://example.awsapps.com/start/',
+      'eu-central-1',
+      '1234567890',
+      'test',
+      $this->ssoCache(),
+      $conn
+    );
+    $credentials= $provider->credentials();
+
+    Assert::equals('key', $credentials->accessKey());
+    Assert::equals('secret', $credentials->secretKey()->reveal());
+    Assert::equals($session, $credentials->sessionToken());
+  }
+
   #[Test]
   public function chain_returns_null_when_empty() {
     Assert::null(CredentialProvider::none()->credentials());
@@ -364,7 +423,9 @@ class CredentialProviderTest {
     $env= [
       'AWS_ACCESS_KEY_ID'                      => null,
       'AWS_SECRET_ACCESS_KEY'                  => null,
-      'AWS_SHARED_CREDENTIALS_FILE'            => '/file-does-not-exist',
+      'AWS_PROFILE'                            => null,
+      'AWS_CONFIG_FILE'                        => self::NON_EXISTANT,
+      'AWS_SHARED_CREDENTIALS_FILE'            => self::NON_EXISTANT,
       'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' => null,
       'AWS_CONTAINER_CREDENTIALS_FULL_URI'     => null,
       'AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE' => null,
