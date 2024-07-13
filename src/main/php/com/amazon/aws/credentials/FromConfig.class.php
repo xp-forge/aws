@@ -30,13 +30,18 @@ class FromConfig extends Provider {
   public function __construct($config= null, $credentials= null, $profile= null) {
     $this->config= new IniFile($config
       ?? Environment::variable('AWS_CONFIG_FILE', null)
-      ?? new Path(Environment::homeDir(), '.aws', 'config')
+      ?? new Path($this->homeDir(), '.aws', 'config')
     );
     $this->credentials= new IniFile($credentials
       ?? Environment::variable('AWS_SHARED_CREDENTIALS_FILE', null)
-      ?? new Path(Environment::homeDir(), '.aws', 'credentials')
+      ?? new Path($this->homeDir(), '.aws', 'credentials')
     );
     $this->profile= $profile ?? Environment::variable('AWS_PROFILE', 'default');
+  }
+
+  /** @return string */
+  private function homeDir() {
+    return Environment::variable(['HOME', 'USERPROFILE', 'LAMBDA_TASK_ROOT'], DIRECTORY_SEPARATOR);
   }
 
   /** @return ?com.amazon.aws.Credentials */

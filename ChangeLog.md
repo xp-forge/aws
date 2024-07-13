@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.2.0 / 2024-07-13
+
+* Included `LAMBDA_TASK_ROOT` in home directory lookup - @thekid
+
 ## 2.1.0 / 2024-07-07
 
 * Merged PR #12: Support for SSO credential provider - @thekid
