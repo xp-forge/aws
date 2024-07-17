@@ -6,7 +6,7 @@ AWS Core for the XP Framework
 [![BSD Licence](https://raw.githubusercontent.com/xp-framework/web/master/static/licence-bsd.png)](https://github.com/xp-framework/core/blob/master/LICENCE.md)
 [![Requires PHP 7.0+](https://raw.githubusercontent.com/xp-framework/web/master/static/php-7_0plus.svg)](http://php.net/)
 [![Supports PHP 8.0+](https://raw.githubusercontent.com/xp-framework/web/master/static/php-8_0plus.svg)](http://php.net/)
-[![Latest Stable Version](https://poser.pugx.org/xp-forge/aws/version.png)](https://packagist.org/packages/xp-forge/aws)
+[![Latest Stable Version](https://poser.pugx.org/xp-forge/aws/version.svg)](https://packagist.org/packages/xp-forge/aws)
 
 Provides common AWS functionality in a low-level and therefore lightweight library (*less than 3% of the size of the official PHP SDK!*)
 
