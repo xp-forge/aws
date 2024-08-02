@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.3.0 / 2024-08-02
+
+* Merged PR #13: Add optional parameter "type" to `Resource::transmit()`
+  (@thekid)
+
 ## 2.2.0 / 2024-07-13
 
 * Included `LAMBDA_TASK_ROOT` in home directory lookup - @thekid
