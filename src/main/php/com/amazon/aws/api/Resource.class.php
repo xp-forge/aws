@@ -59,8 +59,9 @@ class Resource {
   }
 
   /**
-   * Transmits a given payload and returns the response using the
-   * given mime type, which defaults to `application/json`.
+   * Transmits a given payload using a HTTP `POST` request using the
+   * given mime type, which defaults to `application/json`. Returns
+   * the API response.
    *
    * @param  var $payload
    * @param  string $type
