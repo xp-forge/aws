@@ -2,7 +2,7 @@
 
 use com\amazon\aws\api\Resource;
 use com\amazon\aws\{ServiceEndpoint, Credentials};
-use lang\ElementNotFoundException;
+use lang\{ElementNotFoundException, IllegalArgumentException};
 use test\{Assert, Before, Expect, Test, Values};
 
 class ResourceTest {
@@ -43,8 +43,8 @@ class ResourceTest {
     Assert::equals($expected, (new Resource($this->endpoint, '/'))->serialize($payload, 'application/x-www-form-urlencoded'));
   }
 
-  #[Test, Values([['Test', 'Test']])]
-  public function serialize_text($payload, $expected) {
-    Assert::equals($expected, (new Resource($this->endpoint, '/'))->serialize($payload, 'text/plain'));
+  #[Test, Expect(IllegalArgumentException::class)]
+  public function serialize_unknown() {
+    (new Resource($this->endpoint, '/'))->serialize(null, 'unknown/mime');
   }
 }

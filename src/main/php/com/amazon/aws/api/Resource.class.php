@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\api;
 
-use lang\ElementNotFoundException;
+use lang\{ElementNotFoundException, IllegalArgumentException};
 use text\json\Json;
 use util\data\Marshalling;
 
@@ -48,12 +48,13 @@ class Resource {
    * @param  var $payload
    * @param  string $type
    * @return string
+   * @throws lang.IllegalArgumentException
    */
   public function serialize($payload, $type) {
     switch ($type) {
       case 'application/json': return Json::of($payload);
       case 'application/x-www-form-urlencoded': return http_build_query($payload, '', '&', PHP_QUERY_RFC1738);
-      default: return (string)$payload;
+      default: throw new IllegalArgumentException('Cannot serialize to '.$type);
     }
   }
 
