@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\api;
 
-use lang\ElementNotFoundException;
+use lang\{ElementNotFoundException, IllegalArgumentException};
 use text\json\Json;
 use util\data\Marshalling;
 
@@ -43,17 +43,36 @@ class Resource {
   }
 
   /**
-   * Transmits a given payload and returns the response
+   * Serialize a given payload
    *
    * @param  var $payload
+   * @param  string $type
+   * @return string
+   * @throws lang.IllegalArgumentException
+   */
+  public function serialize($payload, $type) {
+    switch ($type) {
+      case 'application/json': return Json::of($payload);
+      case 'application/x-www-form-urlencoded': return http_build_query($payload, '', '&', PHP_QUERY_RFC1738);
+      default: throw new IllegalArgumentException('Cannot serialize to '.$type);
+    }
+  }
+
+  /**
+   * Transmits a given payload using a HTTP `POST` request using the
+   * given mime type, which defaults to `application/json`. Returns
+   * the API response.
+   *
+   * @param  var $payload
+   * @param  string $type
    * @return com.amazon.aws.api.Response
    */
-  public function transmit($payload) {
+  public function transmit($payload, $type= 'application/json') {
     return $this->endpoint->request(
       'POST',
       $this->target,
-      ['Content-Type' => 'application/json'],
-      Json::of($this->marshalling->marshal($payload))
+      ['Content-Type' => $type],
+      $this->serialize($this->marshalling->marshal($payload), $type)
     );
   }
 }
