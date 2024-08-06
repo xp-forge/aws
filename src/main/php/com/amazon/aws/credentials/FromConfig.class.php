@@ -44,11 +44,9 @@ class FromConfig extends Provider {
     return Environment::variable(['HOME', 'USERPROFILE', 'LAMBDA_TASK_ROOT'], DIRECTORY_SEPARATOR);
   }
 
-  /** @return ?com.amazon.aws.Credentials */
-  public function credentials() {
+  /** @return ?[:string] */
+  private function load() {
     $modified= max($this->config->modified(), $this->credentials->modified());
-
-    // Edge case: Neither file exists
     if (null === $modified) return null;
 
     // Merge configuration and memoize along with modification date
@@ -64,23 +62,55 @@ class FromConfig extends Provider {
       }
     }
 
-    $section= $this->sections['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? null;
+    return $this->sections['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? null;
+  }
+
+  /**
+   * Returns the SSO provider, supporting config with and without SSO session.
+   *
+   * @see    https://github.com/xp-forge/aws/issues/14
+   * @param  ?[:string] $section
+   * @return ?com.amazon.aws.FromSSO
+   */
+  public function sso($section= null) {
+    $section ?? $section= $this->load();
+
+    if (($session= $section['sso_session'] ?? null) && ($sso= $this->sections["sso-session {$session}"] ?? null)) {
+      return new FromSSO(
+        $sso['sso_start_url'],
+        $sso['sso_region'] ?? $section['region'] ?? Environment::variable('AWS_REGION'),
+        $section['sso_account_id'],
+        $section['sso_role_name'],
+        $session
+      );
+    } else if ($url= $section['sso_start_url'] ?? null) {
+      return new FromSSO(
+        $url,
+        $section['sso_region'] ?? $section['region'] ?? Environment::variable('AWS_REGION'),
+        $section['sso_account_id'],
+        $section['sso_role_name'],
+        null
+      );
+    }
+
+    return null;
+  }
+
+  /** @return ?com.amazon.aws.Credentials */
+  public function credentials() {
+    $section= $this->load();
+
+    // Edge case: Neither file exists or a non-existant profile is referenced
+    if (null === $section) return null;
+
     if ($accessKey= $section['aws_access_key_id'] ?? null) {
       return new Credentials(
         $accessKey,
         new Secret($section['aws_secret_access_key']),
         $section['aws_session_token'] ?? null
       );
-    }
-
-    if ($sso= $section['sso_start_url'] ?? null) {
-      $provider= new FromSSO(
-        $sso,
-        $section['sso_region'] ?? $section['region'] ?? Environment::variable('AWS_REGION'),
-        $section['sso_account_id'],
-        $section['sso_role_name']
-      );
-      return $provider->credentials();
+    } else if ($ssoProvider= $this->sso($section)) {
+      return $ssoProvider->credentials();
     }
 
     return null;

@@ -13,7 +13,8 @@ use text\json\{Json, FileInput, StreamInput};
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
 class FromSSO extends Provider {
-  private $startUrl, $region, $accountId, $roleName, $cache, $conn;
+  public $startUrl, $region, $accountId, $roleName;
+  private $cache, $conn;
   private $credentials= null;
 
   /**
@@ -23,15 +24,19 @@ class FromSSO extends Provider {
    * @param  string $region
    * @param  string $accountId
    * @param  string $roleName
-   * @param  ?io.File $cache
-   * @param  ?peer.HttpConnection $conn
+   * @param  ?string|io.File $cache
+   * @param  ?peer.http.HttpConnection $conn
    */
   public function __construct($startUrl, $region, $accountId, $roleName, $cache= null, $conn= null) {
     $this->startUrl= $startUrl;
     $this->region= $region;
     $this->accountId= $accountId;
     $this->roleName= $roleName;
-    $this->cache= $cache ?? new File(new Path(Environment::homeDir(), '.aws', 'sso', 'cache', sha1($startUrl).'.json'));
+    $this->cache= $cache instanceof File ? $cache : new File(
+      new Path(Environment::homeDir(), '.aws', 'sso', 'cache'),
+      sha1($cache ?? $startUrl).'.json'
+    );
+
     $this->conn= $conn ?? new HttpConnection("https://portal.sso.{$region}.amazonaws.com/federation/credentials");
   }
 

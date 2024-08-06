@@ -3,6 +3,13 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.4.0 / 2024-08-06
+
+* Added support for SSO sessions, making the default credential provider
+  compatible when running `aws configure sso` with newer AWS CLI versions.
+  Fixes issue #14
+  (@thekid)
+
 ## 2.3.0 / 2024-08-02
 
 * Merged PR #13: Add optional parameter "type" to `Resource::transmit()`

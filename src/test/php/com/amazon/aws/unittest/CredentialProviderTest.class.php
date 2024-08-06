@@ -351,6 +351,18 @@ class CredentialProviderTest {
     });
   }
 
+  #[Test]
+  public function no_sso() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "aws_access_key_id = key\n".
+      "aws_secret_access_key = secret\n"
+    );
+    $provider= new FromConfig($file, self::NON_EXISTANT, 'default');
+
+    Assert::null($provider->sso());
+  }
+
   #[Test, Values([['null', null], ['"token"', 'token']])]
   public function sso_with($token, $session) {
     $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials(3600, $token)]);
@@ -367,6 +379,45 @@ class CredentialProviderTest {
     Assert::equals('key', $credentials->accessKey());
     Assert::equals('secret', $credentials->secretKey()->reveal());
     Assert::equals($session, $credentials->sessionToken());
+  }
+
+  #[Test]
+  public function sso() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "sso_start_url = https://example.awsapps.com/start/\n".
+      "sso_account_id = 1234567890\n".
+      "sso_region = eu-central-1\n".
+      "sso_role_name = ExampleContributorSet"
+    );
+    $provider= (new FromConfig($file, self::NON_EXISTANT, 'default'))->sso();
+
+    Assert::instance(FromSSO::class, $provider);
+    Assert::equals('https://example.awsapps.com/start/', $provider->startUrl);
+    Assert::equals('1234567890', $provider->accountId);
+    Assert::equals('eu-central-1', $provider->region);
+    Assert::equals('ExampleContributorSet', $provider->roleName);
+  }
+
+  #[Test]
+  public function sso_session() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "sso_session = example\n".
+      "sso_account_id = 1234567890\n".
+      "sso_role_name = ExampleContributorSet\n".
+      "[sso-session example]\n".
+      "sso_start_url = https://example.awsapps.com/start/\n".
+      "sso_region = eu-central-1\n".
+      "sso_registration_scopes = sso:account:access"
+    );
+    $provider= (new FromConfig($file, self::NON_EXISTANT, 'default'))->sso();
+
+    Assert::instance(FromSSO::class, $provider);
+    Assert::equals('https://example.awsapps.com/start/', $provider->startUrl);
+    Assert::equals('1234567890', $provider->accountId);
+    Assert::equals('eu-central-1', $provider->region);
+    Assert::equals('ExampleContributorSet', $provider->roleName);
   }
 
   #[Test]
