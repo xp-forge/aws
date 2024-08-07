@@ -10,6 +10,7 @@ use text\json\{Json, FileInput, FileOutput, StreamInput};
  * SSO credentials
  * 
  * @see   https://docs.aws.amazon.com/general/latest/gr/sso.html
+ * @see   https://github.com/xp-forge/aws/issues/15
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
 class FromSSO extends Provider {
