@@ -45,34 +45,45 @@ class FromSSO extends Provider {
     $this->refresh= $refresh ?? new HttpConnection("https://oidc.{$region}.amazonaws.com/token");
   }
 
+  /**
+   * Refresh token via OIDC service
+   *
+   * @param  [:string] $cache
+   * @return [:string] $cache
+   * @throws lang.IllegalStateException
+   */
+  private function refresh($cache) {
+    $payload= [
+      'clientId'     => $cache['clientId'],
+      'clientSecret' => $cache['clientSecret'],
+      'refreshToken' => $cache['refreshToken'],
+      'grantType'    => 'refresh_token',
+    ];
+    try {
+      $res= $this->refresh->post(new RequestData(Json::of($payload)), ['Content-Type' => self::JSON]);
+      $refresh= Json::read(new StreamInput($res->in()));
+    } catch (Throwable $t) {
+      throw new IllegalStateException("OOIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
+    }
+
+    $cache['accessToken']= $refresh['accessToken'];
+    $cache['refreshToken']= $refresh['refreshToken'];
+    $cache['expiresAt']= gmdate('Y-m-d\TH:i:s\Z', time() + $refresh['expiresIn']);
+    return $cache;
+  }
+
   /** @return ?com.amazon.aws.Credentials */
   public function credentials() {
     if (null !== $this->credentials && !$this->credentials->expired()) return $this->credentials;
     if (!$this->cache->exists()) return $this->credentials= null;
 
-    // Read cache, check for its expiration date and whether the access token can be refreshed
+    // Read cache, check for its expiration date and whether the access token
+    // can be refreshed via the AWS OIDC endpoint, updating cache accordingly.
     $cache= Json::read(new FileInput($this->cache));
     if (gmdate('Y-m-d\TH:i:s\Z') >= $cache['expiresAt']) {
       if (!isset($cache['refreshToken'])) return $this->credentials= null;
 
-      // Refresh token via OIDC service
-      $payload= [
-        'clientId'     => $cache['clientId'],
-        'clientSecret' => $cache['clientSecret'],
-        'refreshToken' => $cache['refreshToken'],
-        'grantType'    => 'refresh_token',
-      ];
-      try {
-        $res= $this->refresh->post(new RequestData(Json::of($payload)), ['Content-Type' => self::JSON]);
-        $refresh= Json::read(new StreamInput($res->in()));
-      } catch (Throwable $t) {
-        throw new IllegalStateException("OOIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
-      }
-
-      // Update cache
-      $cache['accessToken']= $refresh['accessToken'];
-      $cache['refreshToken']= $refresh['refreshToken'];
-      $cache['expiresAt']= gmdate('Y-m-d\TH:i:s\Z', time() + $refresh['expiresIn']);
+      $cache= $this->refresh($cache);
       Json::write($cache, new FileOutput($this->cache));
     }
 
