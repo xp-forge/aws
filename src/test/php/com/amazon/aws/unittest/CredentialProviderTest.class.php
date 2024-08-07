@@ -5,6 +5,7 @@ use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
 use test\{Assert, Expect, Test, Values};
+use text\json\{Json, FileInput};
 use util\NoSuchElementException;
 
 class CredentialProviderTest {
@@ -83,8 +84,8 @@ class CredentialProviderTest {
       'Content-Type: application/json',
       '',
       '{
-        "accessToken": "access",
-        "refreshToken": "refreshToken",
+        "accessToken": "new-access",
+        "refreshToken": "new-refresh",
         "expiresIn": 3600
       }'
     ];
@@ -405,6 +406,7 @@ class CredentialProviderTest {
   #[Test]
   public function sso_refresh() {
     $payload= '{"clientId":"client","clientSecret":"secret","refreshToken":"refresh","grantType":"refresh_token"}';
+    $cache= $this->ssoCache(-1);
     $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials()]);
     $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh()]);
     $provider= new FromSSO(
@@ -412,14 +414,17 @@ class CredentialProviderTest {
       'eu-central-1',
       '1234567890',
       'test',
-      $this->ssoCache(-1),
+      $cache,
       $conn,
       $refresh
     );
     $credentials= $provider->credentials();
+    $updated= Json::read(new FileInput($cache));
 
     Assert::equals('key', $credentials->accessKey());
     Assert::equals('secret', $credentials->secretKey()->reveal());
+    Assert::equals('new-access', $updated['accessToken']);
+    Assert::equals('new-refresh', $updated['refreshToken']);
   }
 
   #[Test]
