@@ -51,11 +51,12 @@ class Credentials implements Value {
   /** @return string */
   public function toString() {
     return sprintf(
-      '%s(accessKey: %s, secretKey: %s%s)',
+      '%s(accessKey: %s, secretKey: %s%s%s)',
       nameof($this),
       $this->accessKey,
       str_repeat('*', strlen($this->secretKey->reveal())),
-      null === $this->sessionToken ? '' : ', sessionToken: '.$this->sessionToken
+      null === $this->sessionToken ? '' : ', sessionToken: '.$this->sessionToken,
+      null === $this->expiration ? '' : ', expiration: '.date('Y-m-d H:i:s', $this->expiration)
     );
   }
 

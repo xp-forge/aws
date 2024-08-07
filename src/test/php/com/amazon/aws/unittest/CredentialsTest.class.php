@@ -69,4 +69,28 @@ class CredentialsTest {
   public function expired_one_second_ago() {
     Assert::true((new Credentials('key', 'secret', null, time() - 1))->expired());
   }
+
+  #[Test]
+  public function string_representation() {
+    Assert::equals(
+      'com.amazon.aws.Credentials(accessKey: key, secretKey: ******)',
+      (new Credentials('key', 'secret'))->toString()
+    );
+  }
+
+  #[Test]
+  public function string_representation_with_session() {
+    Assert::equals(
+      'com.amazon.aws.Credentials(accessKey: key, secretKey: ******, sessionToken: session)',
+      (new Credentials('key', 'secret', 'session'))->toString()
+    );
+  }
+
+  #[Test]
+  public function string_representation_with_expiration() {
+    Assert::equals(
+      'com.amazon.aws.Credentials(accessKey: key, secretKey: ******, expiration: 1970-01-01 01:00:00)',
+      (new Credentials('key', 'secret', null, 3600))->toString()
+    );
+  }
 }

@@ -3,6 +3,9 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Included expiration date and time in `Credentials` string representation
+  (@thekid)
+
 ## 2.4.0 / 2024-08-06
 
 * Added support for SSO sessions, making the default credential provider
