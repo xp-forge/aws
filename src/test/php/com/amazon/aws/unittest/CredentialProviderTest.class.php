@@ -5,6 +5,7 @@ use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
 use test\{Assert, Expect, Test, Values};
+use text\json\{Json, FileInput};
 use util\NoSuchElementException;
 
 class CredentialProviderTest {
@@ -42,7 +43,10 @@ class CredentialProviderTest {
       "startUrl": "https://example.awsapps.com/start/",
       "region": "eu-central-1",
       "accessToken": "access",
-      "expiresAt": "'.gmdate('Y-m-d\TH:i:s\Z', time() + $expireIn).'"
+      "expiresAt": "'.gmdate('Y-m-d\TH:i:s\Z', time() + $expireIn).'",
+      "refreshToken": "refresh",
+      "clientId": "client",
+      "clientSecret": "secret"
     }');
   }
 
@@ -65,6 +69,24 @@ class CredentialProviderTest {
           "sessionToken": '.$token.',
           "expiration": '.((time() + $expireIn) * 1000).'
         }
+      }'
+    ];
+  }
+
+  /**
+   * Returns OIDC refresh response
+   *
+   * @return string[]
+   */
+  private function oidcRefresh() {
+    return [
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      '',
+      '{
+        "accessToken": "new-access",
+        "refreshToken": "new-refresh",
+        "expiresIn": 3600
       }'
     ];
   }
@@ -379,6 +401,30 @@ class CredentialProviderTest {
     Assert::equals('key', $credentials->accessKey());
     Assert::equals('secret', $credentials->secretKey()->reveal());
     Assert::equals($session, $credentials->sessionToken());
+  }
+
+  #[Test]
+  public function sso_refresh() {
+    $payload= '{"clientId":"client","clientSecret":"secret","refreshToken":"refresh","grantType":"refresh_token"}';
+    $cache= $this->ssoCache(-1);
+    $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials()]);
+    $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh()]);
+    $provider= new FromSSO(
+      'https://example.awsapps.com/start/',
+      'eu-central-1',
+      '1234567890',
+      'test',
+      $cache,
+      $conn,
+      $refresh
+    );
+    $credentials= $provider->credentials();
+    $updated= Json::read(new FileInput($cache));
+
+    Assert::equals('key', $credentials->accessKey());
+    Assert::equals('secret', $credentials->secretKey()->reveal());
+    Assert::equals('new-access', $updated['accessToken']);
+    Assert::equals('new-refresh', $updated['refreshToken']);
   }
 
   #[Test]
