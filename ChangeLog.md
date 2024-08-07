@@ -3,6 +3,9 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Merged PR #16: Refresh access tokens created from SSO, implementing the
+  second part of SSO session support, see #14 and #15
+  (@thekid)
 * Included expiration date and time in `Credentials` string representation
   (@thekid)
 
