@@ -17,7 +17,7 @@ class FromSSO extends Provider {
   const JSON= 'application/json';
 
   public $startUrl, $region, $accountId, $roleName;
-  private $cache, $sso, $refresh;
+  private $cache, $sso, $refresh, $userAgent;
   private $credentials= null;
 
   /**
@@ -40,9 +40,14 @@ class FromSSO extends Provider {
       new Path(Environment::homeDir(), '.aws', 'sso', 'cache'),
       sha1($cache ?? $startUrl).'.json'
     );
-
     $this->sso= $sso ?? new HttpConnection("https://portal.sso.{$region}.amazonaws.com/federation/credentials");
     $this->refresh= $refresh ?? new HttpConnection("https://oidc.{$region}.amazonaws.com/token");
+    $this->userAgent= sprintf(
+      'xp-aws/1.0.0 OS/%s/%s lang/php/%s',
+      php_uname('s'),
+      php_uname('r'),
+      PHP_VERSION
+    );
   }
 
   /**
@@ -60,7 +65,10 @@ class FromSSO extends Provider {
       'grantType'    => 'refresh_token',
     ];
     try {
-      $res= $this->refresh->post(new RequestData(Json::of($payload)), ['Content-Type' => self::JSON]);
+      $res= $this->refresh->post(new RequestData(Json::of($payload)), [
+        'X-Amz-User-Agent' => $this->userAgent,
+        'Content-Type'     => self::JSON,
+      ]);
       $refresh= Json::read(new StreamInput($res->in()));
     } catch (Throwable $t) {
       throw new IllegalStateException("OOIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
@@ -90,6 +98,7 @@ class FromSSO extends Provider {
     // Fetch credentials via SSO
     try {
       $res= $this->sso->get(['role_name' => $this->roleName, 'account_id' => $this->accountId], [
+        'X-Amz-User-Agent'       => $this->userAgent,
         'x-amz-sso_bearer_token' => $cache['accessToken'],
         'Accept'                 => self::JSON,
       ]);
