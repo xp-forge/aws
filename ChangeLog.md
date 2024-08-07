@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.5.0 / 2024-08-07
+
 * Merged PR #16: Refresh access tokens created from SSO, implementing the
   second part of SSO session support, see #14 and #15
   (@thekid)
