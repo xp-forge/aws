@@ -60,7 +60,7 @@ class EventStreamTest {
   public function payload($value) {
     $events= new EventStream(new MemoryInputStream($this->message('', $value)));
 
-    Assert::equals(new Event([], $value), $events->next());
+    Assert::equals(new Event($events, [], $value), $events->next());
   }
 
   #[Test, Values([['01 61 00', ['a' => true]], ['01 61 00 01 62 01', ['a' => true, 'b' => false]]])]
@@ -68,7 +68,7 @@ class EventStreamTest {
     $message= $this->message(hex2bin(str_replace(' ', '', $encoded)), '');
     $events= new EventStream(new MemoryInputStream($message));
 
-    Assert::equals(new Event($expected, ''), $events->next());
+    Assert::equals(new Event($events, $expected, ''), $events->next());
   }
 
   #[Test, Values(from: 'values')]
@@ -76,7 +76,7 @@ class EventStreamTest {
     $message= $this->message("\004test".hex2bin(str_replace(' ', '', $encoded)), 'Test');
     $events= new EventStream(new MemoryInputStream($message));
 
-    Assert::equals(new Event(['test' => $expected], 'Test'), $events->next());
+    Assert::equals(new Event($events, ['test' => $expected], 'Test'), $events->next());
   }
 
   #[Test, Expect(class: IllegalStateException::class, message: 'Prelude checksum mismatch')]

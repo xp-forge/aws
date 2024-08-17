@@ -3,6 +3,7 @@
 use IteratorAggregate, Traversable;
 use io\streams\InputStream;
 use lang\IllegalStateException;
+use util\data\Marshalling;
 use util\{Bytes, Date, UUID};
 
 /**
@@ -26,10 +27,17 @@ class EventStream implements IteratorAggregate {
   const UUID = 9;
 
   private $in;
+  public $marshalling;
 
-  /** Creates a new instance */
-  public function __construct(InputStream $in) {
+  /**
+   * Creates a new instance
+   *
+   * @param  io.streams.InputStream $in
+   * @param  ?util.data.Marshalliung $marshalling
+   */
+  public function __construct(InputStream $in, $marshalling= null) {
     $this->in= $in;
+    $this->marshalling= $marshalling;
   }
 
   /**
@@ -154,7 +162,7 @@ class EventStream implements IteratorAggregate {
       throw new IllegalStateException('Payload checksum mismatch');
     }
 
-    return new Event($headers, $buffer);
+    return new Event($this, $headers, $buffer);
   }
 
   /**
