@@ -9,6 +9,7 @@ use util\{Bytes, Date, UUID};
  * Amazon event stream, mime type `application/vnd.amazon.eventstream`.
  *
  * @see   https://docs.aws.amazon.com/AmazonS3/latest/API/RESTSelectObjectAppendix.html
+ * @see   https://github.com/aws/aws-sdk-go-v2/blob/main/aws/protocol/eventstream/header_value.go
  * @see   com.amazon.aws.api.Response::events()
  * @test  com.amazon.aws.unittest.EventStreamTest
  */
