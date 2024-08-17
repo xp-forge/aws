@@ -1,8 +1,9 @@
 <?php namespace com\amazon\aws\credentials;
 
 use com\amazon\aws\Credentials;
-use io\{File, Path};
-use lang\{Environment, IllegalStateException, Throwable};
+use io\{File, Path, IOException};
+use lang\{Environment, IllegalStateException};
+use peer\AuthenticationException;
 use peer\http\{HttpConnection, RequestData};
 use text\json\{Json, FileInput, FileOutput, StreamInput};
 
@@ -55,7 +56,8 @@ class FromSSO extends Provider {
    *
    * @param  [:string] $cache
    * @return [:string] $cache
-   * @throws lang.IllegalStateException
+   * @throws peer.AuthenticationException if refreshing yields an error
+   * @throws lang.IllegalStateException if OIDC endpoint cannot be reached
    */
   private function refresh($cache) {
     $payload= [
@@ -69,11 +71,18 @@ class FromSSO extends Provider {
         'X-Amz-User-Agent' => $this->userAgent,
         'Content-Type'     => self::JSON,
       ]);
-      $refresh= Json::read(new StreamInput($res->in()));
-    } catch (Throwable $t) {
-      throw new IllegalStateException("OOIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
+    } catch (IOException $t) {
+      throw new IllegalStateException("OIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
     }
 
+    if (200 !== $res->statusCode()) {
+      throw new AuthenticationException(
+        "OIDC refreshing via {$this->refresh->getUrl()->getURL()} yields {$res->readData()}...",
+        $cache['refreshToken']
+      );
+    }
+
+    $refresh= Json::read(new StreamInput($res->in()));
     $cache['accessToken']= $refresh['accessToken'];
     $cache['refreshToken']= $refresh['refreshToken'];
     $cache['expiresAt']= gmdate('Y-m-d\TH:i:s\Z', time() + $refresh['expiresIn']);
