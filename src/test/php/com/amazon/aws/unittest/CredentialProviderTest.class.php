@@ -4,6 +4,7 @@ use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs,
 use com\amazon\aws\{Credentials, CredentialProvider};
 use io\{TempFile, IOException};
 use lang\IllegalStateException;
+use peer\AuthenticationException;
 use test\{Assert, Expect, Test, Values};
 use text\json\{Json, FileInput};
 use util\NoSuchElementException;
@@ -76,19 +77,31 @@ class CredentialProviderTest {
   /**
    * Returns OIDC refresh response
    *
+   * @param  bool $success
    * @return string[]
    */
-  private function oidcRefresh() {
-    return [
-      'HTTP/1.1 200 OK',
-      'Content-Type: application/json',
-      '',
-      '{
-        "accessToken": "new-access",
-        "refreshToken": "new-refresh",
-        "expiresIn": 3600
-      }'
-    ];
+  private function oidcRefresh($success) {
+    return $success
+      ? [
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/json',
+        '',
+        '{
+          "accessToken": "new-access",
+          "refreshToken": "new-refresh",
+          "expiresIn": 3600
+        }'
+      ]
+      : [
+        'HTTP/1.1 400 Bad request',
+        'Content-Type: application/json',
+        '',
+        '{
+          "error" : "invalid_grant",
+          "error_description" : "Invalid refresh token provided"
+        }'
+      ]
+    ;
   }
 
   #[Test]
@@ -408,7 +421,7 @@ class CredentialProviderTest {
     $payload= '{"clientId":"client","clientSecret":"secret","refreshToken":"refresh","grantType":"refresh_token"}';
     $cache= $this->ssoCache(-1);
     $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials()]);
-    $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh()]);
+    $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh(true)]);
     $provider= new FromSSO(
       'https://example.awsapps.com/start/',
       'eu-central-1',
@@ -425,6 +438,26 @@ class CredentialProviderTest {
     Assert::equals('secret', $credentials->secretKey()->reveal());
     Assert::equals('new-access', $updated['accessToken']);
     Assert::equals('new-refresh', $updated['refreshToken']);
+  }
+
+  #[Test]
+  public function cannot_refresh_sso_token() {
+    $payload= '{"clientId":"client","clientSecret":"secret","refreshToken":"refresh","grantType":"refresh_token"}';
+    $cache= $this->ssoCache(-1);
+    $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials()]);
+    $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh(false)]);
+    $provider= new FromSSO(
+      'https://example.awsapps.com/start/',
+      'eu-central-1',
+      '1234567890',
+      'test',
+      $cache,
+      $conn,
+      $refresh
+    );
+    Assert::throws(AuthenticationException::class, function() use($provider) {
+      $provider->credentials();
+    });
   }
 
   #[Test]
