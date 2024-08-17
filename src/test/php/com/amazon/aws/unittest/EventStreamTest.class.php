@@ -2,8 +2,9 @@
 
 use com\amazon\aws\api\{Event, EventStream};
 use io\streams\MemoryInputStream;
-use util\{Bytes, Date, UUID};
+use lang\IllegalStateException;
 use test\{Assert, Expect, Test, Values};
+use util\{Bytes, Date, UUID};
 
 class EventStreamTest {
 
@@ -76,5 +77,13 @@ class EventStreamTest {
     $events= new EventStream(new MemoryInputStream($message));
 
     Assert::equals(new Event(['test' => $expected], 'Test'), $events->next());
+  }
+
+  #[Test, Expect(class: IllegalStateException::class, message: 'Prelude checksum mismatch')]
+  public function malformed_prelude_checksum() {
+    $message= $this->message('', '');
+    $message[9]= "\x00";
+
+    (new EventStream(new MemoryInputStream($message)))->next();
   }
 }
