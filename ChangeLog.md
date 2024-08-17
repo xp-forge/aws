@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.5.1 / 2024-08-17
+
 * Fixed issue #17: Undefined array key "accessToken" when refreshing SSO
   tokens fails. Now raises `peer.AuthenticationException` instead.
   (@thekid)
