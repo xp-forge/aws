@@ -40,32 +40,41 @@ class EventStreamTest {
 
   #[Test]
   public function next() {
-    $event= new EventStream(new MemoryInputStream($this->message('', '')));
+    $events= new EventStream(new MemoryInputStream($this->message('', '')));
 
-    Assert::instance(Event::class, $event->next());
-    Assert::null($event->next());
+    Assert::instance(Event::class, $events->next());
+    Assert::null($events->next());
+  }
+
+  #[Test]
+  public function iteration() {
+    $events= new EventStream(new MemoryInputStream($this->message('', '')));
+
+    $list= iterator_to_array($events);
+    Assert::equals(1, sizeof($list));
+    Assert::instance('com.amazon.aws.api.Event[]', $list);
   }
 
   #[Test, Values(['', 'Test'])]
   public function payload($value) {
-    $event= new EventStream(new MemoryInputStream($this->message('', $value)));
+    $events= new EventStream(new MemoryInputStream($this->message('', $value)));
 
-    Assert::equals(new Event([], $value), $event->next());
+    Assert::equals(new Event([], $value), $events->next());
   }
 
   #[Test, Values([['01 61 00', ['a' => true]], ['01 61 00 01 62 01', ['a' => true, 'b' => false]]])]
   public function headers($encoded, $expected) {
     $message= $this->message(hex2bin(str_replace(' ', '', $encoded)), '');
-    $event= new EventStream(new MemoryInputStream($message));
+    $events= new EventStream(new MemoryInputStream($message));
 
-    Assert::equals(new Event($expected, ''), $event->next());
+    Assert::equals(new Event($expected, ''), $events->next());
   }
 
   #[Test, Values(from: 'values')]
   public function header_value_type($kind, $encoded, $expected) {
     $message= $this->message("\004test".hex2bin(str_replace(' ', '', $encoded)), 'Test');
-    $event= new EventStream(new MemoryInputStream($message));
+    $events= new EventStream(new MemoryInputStream($message));
 
-    Assert::equals(new Event(['test' => $expected], 'Test'), $event->next());
+    Assert::equals(new Event(['test' => $expected], 'Test'), $events->next());
   }
 }
