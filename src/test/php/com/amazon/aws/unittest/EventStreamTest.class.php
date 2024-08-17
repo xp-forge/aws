@@ -80,9 +80,17 @@ class EventStreamTest {
   }
 
   #[Test, Expect(class: IllegalStateException::class, message: 'Prelude checksum mismatch')]
-  public function malformed_prelude_checksum() {
+  public function prelude_checksum() {
     $message= $this->message('', '');
     $message[9]= "\x00";
+
+    (new EventStream(new MemoryInputStream($message)))->next();
+  }
+
+  #[Test, Expect(class: IllegalStateException::class, message: 'Payload checksum mismatch')]
+  public function payload_checksum() {
+    $message= $this->message('', 'Test');
+    $message[16]= "\x00";
 
     (new EventStream(new MemoryInputStream($message)))->next();
   }
