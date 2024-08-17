@@ -98,6 +98,14 @@ class ServiceEndpointTest {
     );
   }
 
+  #[Test]
+  public function service_alternate_domain() {
+    Assert::equals(
+      'bedrock-runtime.amazonaws.com',
+      (new ServiceEndpoint('bedrock', $this->credentials))->using('bedrock-runtime.')->domain()
+    );
+  }
+
   #[Test, Values(['id', 'id.execute-api.eu-central-1.amazonaws.com'])]
   public function use_domain_or_prefix($domain) {
     Assert::equals(
