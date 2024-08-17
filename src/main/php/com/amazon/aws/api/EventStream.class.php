@@ -75,36 +75,36 @@ class EventStream implements IteratorAggregate {
           break;
 
         case self::SHORT:
-          $value= unpack('n', $buffer, $offset)[1];
+          $value= unpack('n', substr($buffer, $offset, 2))[1];
           $offset+= 2;
           break;
 
         case self::INTEGER:
-          $value= unpack('N', $buffer, $offset)[1];
+          $value= unpack('N', substr($buffer, $offset, 4))[1];
           $offset+= 4;
           break;
 
         case self::LONG:
-          $value= unpack('J', $buffer, $offset)[1];
+          $value= unpack('J', substr($buffer, $offset, 8))[1];
           $offset+= 8;
           break;
 
         case self::BYTES:
-          $l= unpack('n', $buffer, $offset)[1];
+          $l= unpack('n', substr($buffer, $offset, 2))[1];
           $offset+= 2;
           $value= new Bytes(substr($buffer, $offset, $l));
           $offset+= $l;
           break;
 
         case self::STRING:
-          $l= unpack('n', $buffer, $offset)[1];
+          $l= unpack('n', substr($buffer, $offset, 2))[1];
           $offset+= 2;
           $value= substr($buffer, $offset, $l);
           $offset+= $l;
           break;
 
         case self::TIMESTAMP:
-          $t= unpack('J', $buffer, $offset)[1];
+          $t= unpack('J', substr($buffer, $offset, 8))[1];
           $value= new Date((int)($t / 1000));
           $offset+= 8;
           break;
