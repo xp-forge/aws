@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Merged PR #19: Support alternate domains when passed a prefix ending with
+  "." - e.g. for supporting calls to AI models via `bedrock-runtime`.
+  (@thekid)
+
 ## 2.5.1 / 2024-08-17
 
 * Fixed issue #17: Undefined array key "accessToken" when refreshing SSO
