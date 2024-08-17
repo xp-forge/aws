@@ -51,6 +51,7 @@ class Event implements Value {
   public function value($type= null) {
     switch ($mime= ($this->headers[':content-type'] ?? null)) {
       case 'application/json': $value= Json::read(new StringInput($this->content)); break;
+      case 'text/plain': $value= $this->content; break;
       default: throw new IllegalStateException('Cannot deserialize '.($mime ?? 'without content type'));
     }
 
