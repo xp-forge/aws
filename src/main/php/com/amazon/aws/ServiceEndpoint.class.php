@@ -90,15 +90,15 @@ class ServiceEndpoint implements Traceable {
         ? "{$this->service}.amazonaws.com"
         : "{$this->service}.{$this->region}.amazonaws.com"
       ;
-    } else if (false === strpos($this->domain, '.')) {
-      return null === $this->region
-        ? "{$this->domain}.{$this->service}.amazonaws.com"
-        : "{$this->domain}.{$this->service}.{$this->region}.amazonaws.com"
-      ;
     } else if ('.' === $this->domain[strlen($this->domain) - 1]) {
       return null === $this->region
         ? "{$this->domain}amazonaws.com"
         : "{$this->domain}{$this->region}.amazonaws.com"
+      ;
+    } else if (false === strpos($this->domain, '.')) {
+      return null === $this->region
+        ? "{$this->domain}.{$this->service}.amazonaws.com"
+        : "{$this->domain}.{$this->service}.{$this->region}.amazonaws.com"
       ;
     } else {
       return $this->domain;
