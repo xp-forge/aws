@@ -111,6 +111,20 @@ class Response implements Value {
   }
 
   /**
+   * Returns an event stream if the content type is `application/vnd.amazon.eventstream`.
+   *
+   * @return ?com.amazon.aws.api.EventStream
+   * @throws lang.IllegalStateException
+   */
+  public function events() {
+    $mime= $this->headers['Content-Type'][0] ?? null;
+    return 'application/vnd.amazon.eventstream' === $mime
+      ? new EventStream($this->stream)
+      : null
+    ;
+  }
+
+  /**
    * Returns error, raising an error for non-error status codes or
    * if the returned content type is unknown.
    *

@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\unittest;
 
-use com\amazon\aws\api\Response;
+use com\amazon\aws\api\{Response, EventStream};
 use io\streams\MemoryInputStream;
 use lang\{IllegalStateException, XPClass};
 use test\{Assert, Expect, Test, Values};
@@ -57,6 +57,16 @@ class ResponseTest {
   #[Test]
   public function access_json_result() {
     Assert::equals(['ok' => true], $this->response(200, '{"ok":true}', 'application/json')->result());
+  }
+
+  #[Test]
+  public function access_events() {
+    Assert::instance(EventStream::class, $this->response(200, '', 'application/vnd.amazon.eventstream')->events());
+  }
+
+  #[Test]
+  public function no_events() {
+    Assert::null($this->response(200, 'OK', 'text/plain')->events());
   }
 
   #[Test, Expect(class: IllegalStateException::class, message: '404 Not found does not indicate a successful response')]

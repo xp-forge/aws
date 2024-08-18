@@ -91,6 +91,36 @@ try {
 }
 ```
 
+Streaming responses from Bedrock AI models
+------------------------------------------
+See https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ConverseStream.html:
+
+```php
+use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
+use util\cmd\Console;
+
+$model= 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+$runtime= (new ServiceEndpoint('bedrock', CredentialProvider::default()))
+  ->using('bedrock-runtime.')
+  ->in('eu-central-1')
+;
+
+$response= $runtime->resource('/model/{0}/converse-stream', [$model])->transmit([
+  'system' => [['text' => 'Use informal language']],
+  'messages' => [
+    ['role' => 'user', 'content' => [['text' => $argv[1]]]],
+  ],
+  'inferenceConfig' => [
+    'maxTokens'   => 1000,
+    'temperature' => 0.5,
+  ],
+]);
+foreach ($response->events() as $event) {
+  Console::writeLine($event->header(':event-type'), ': ', $event->value());
+}
+```
+
+
 See also
 --------
 * [AWS Lambda for XP Framework](https://github.com/xp-forge/lambda)
