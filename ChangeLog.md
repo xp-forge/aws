@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.6.0 / 2024-08-18
+
+* Merged PR #18: Support AWS event streams, which are implemented as a
+  binary format with the content type `application/vnd.amazon.eventstream`
+  (@thekid)
 * Merged PR #19: Support alternate domains when passed a prefix ending with
   "." - e.g. for supporting calls to AI models via `bedrock-runtime`.
   (@thekid)
