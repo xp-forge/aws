@@ -56,7 +56,7 @@ class Credentials implements Value {
       $this->accessKey,
       str_repeat('*', strlen($this->secretKey->reveal())),
       null === $this->sessionToken ? '' : ', sessionToken: '.$this->sessionToken,
-      null === $this->expiration ? '' : ', expiration: '.date('Y-m-d H:i:s', $this->expiration)
+      null === $this->expiration ? '' : ', expiration: '.gmdate('Y-m-d H:i:s\Z', $this->expiration)
     );
   }
 

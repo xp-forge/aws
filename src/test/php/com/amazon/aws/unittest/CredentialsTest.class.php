@@ -89,7 +89,7 @@ class CredentialsTest {
   #[Test]
   public function string_representation_with_expiration() {
     Assert::equals(
-      'com.amazon.aws.Credentials(accessKey: key, secretKey: ******, expiration: 1970-01-01 01:00:00)',
+      'com.amazon.aws.Credentials(accessKey: key, secretKey: ******, expiration: 1970-01-01 01:00:00Z)',
       (new Credentials('key', 'secret', null, 3600))->toString()
     );
   }
