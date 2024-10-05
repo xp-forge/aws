@@ -69,16 +69,17 @@ class ServiceEndpointTest {
 
   #[Test]
   public function resource() {
-    Assert::instance(Resource::class, (new ServiceEndpoint('lambda', $this->credentials))
-      ->resource('/2015-03-31/functions/{name}/invocations', ['name' => 'test'])
+    Assert::equals('/2015-03-31/functions/test', (new ServiceEndpoint('lambda', $this->credentials))
+      ->resource('/2015-03-31/functions/{name}', ['name' => 'test'])
+      ->target
     );
   }
 
   #[Test]
-  public function version_resource() {
-    Assert::instance(Resource::class, (new ServiceEndpoint('lambda', $this->credentials))
-      ->version('2015-03-31')
-      ->resource('/functions/{name}/invocations', ['name' => 'test'])
+  public function segment_url_encoded() {
+    Assert::equals('/functions/test%20function', (new ServiceEndpoint('lambda', $this->credentials))
+      ->resource('/functions/{name}', ['name' => 'test function'])
+      ->target
     );
   }
 

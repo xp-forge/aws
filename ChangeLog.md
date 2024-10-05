@@ -3,6 +3,14 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 2.6.1 / 2024-10-05
+
+* Fixed signing when URL contains encoded fragments; e.g. when uploading
+  files with spaces in their names to S3.
+  (@thekid)
+* Changed `Credentials` string representation to use expiration in UTC.
+  (@thekid)
+
 ## 2.6.0 / 2024-08-18
 
 * Merged PR #18: Support AWS event streams, which are implemented as a

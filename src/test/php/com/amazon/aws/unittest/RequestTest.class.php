@@ -22,7 +22,7 @@ class RequestTest {
         'Content-Type: text/plain',
         '',
         'Testing local'
-      ]
+      ],
     ]);
   }
 
