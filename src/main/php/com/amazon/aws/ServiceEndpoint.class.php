@@ -62,7 +62,7 @@ class ServiceEndpoint implements Traceable {
 
   /** Sets version to use */
   public function version(string $version): self {
-    $this->base= "/{$version}/";
+    $this->base= '/'.rawurlencode($version).'/';
     return $this;
   }
 

@@ -26,17 +26,16 @@ class Resource {
     $offset= 0;
     do {
       $b= strcspn($path, '{', $offset);
-      $this->target.= substr($path, $offset, $b);
+      $this->target.= strtr(rawurlencode(substr($path, $offset, $b)), ['%2F' => '/']);
       $offset+= $b;
       if ($offset >= $l) break;
 
       $e= strcspn($path, '}', $offset);
       $name= substr($path, $offset + 1, $e - 1);
-      if (!isset($segments[$name])) {
+      if (null === ($segment= $segments[$name] ?? null)) {
         throw new ElementNotFoundException('No such segment "'.$name.'"');
       }
 
-      $segment= $segments[$name];
       $this->target.= rawurlencode($segment);
       $offset+= $e + 1;
     } while ($offset < $l);

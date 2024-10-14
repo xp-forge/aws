@@ -84,6 +84,14 @@ class ServiceEndpointTest {
   }
 
   #[Test]
+  public function path_url_encoded() {
+    Assert::equals('/%40connections/1234', (new ServiceEndpoint('lambda', $this->credentials))
+      ->resource('/@connections/{0}', [1234])
+      ->target
+    );
+  }
+
+  #[Test]
   public function global_domain() {
     Assert::equals(
       'iam.amazonaws.com',
