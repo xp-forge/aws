@@ -5,6 +5,8 @@ AWS Core change log
 
 ## 2.6.1 / 2024-10-14
 
+* Merged PR #20: Add Resource::open() method to make URL creation simpler
+  (@thekid)
 * Fixed signing when URL contains encoded fragments; e.g. when uploading
   files with spaces in their names to S3.
   (@thekid)
