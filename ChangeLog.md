@@ -3,7 +3,7 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
-## 2.6.1 / 2024-10-14
+## 2.7.0 / ????-??-??
 
 * Merged PR #20: Add Resource::open() method to make URL creation simpler
   (@thekid)
