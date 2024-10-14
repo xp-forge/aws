@@ -26,7 +26,7 @@ class Resource {
     $offset= 0;
     do {
       $b= strcspn($path, '{', $offset);
-      $this->target.= strtr(rawurlencode(substr($path, $offset, $b)), ['%2F' => '/']);
+      $this->target.= substr($path, $offset, $b);
       $offset+= $b;
       if ($offset >= $l) break;
 
@@ -36,7 +36,7 @@ class Resource {
         throw new ElementNotFoundException('No such segment "'.$name.'"');
       }
 
-      $this->target.= rawurlencode($segment);
+      $this->target.= $segment;
       $offset+= $e + 1;
     } while ($offset < $l);
   }

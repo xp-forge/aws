@@ -62,7 +62,7 @@ class ServiceEndpoint implements Traceable {
 
   /** Sets version to use */
   public function version(string $version): self {
-    $this->base= '/'.rawurlencode($version).'/';
+    $this->base= "/{$version}/";
     return $this;
   }
 
@@ -201,7 +201,7 @@ class ServiceEndpoint implements Traceable {
     // Create and sign request
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
-    $request->setTarget($target);
+    $request->setTarget(strtr(rawurlencode($target), ['%2F' => '/']));
     $request->addHeaders($headers);
 
     // Compile headers from given host and time including our user agent

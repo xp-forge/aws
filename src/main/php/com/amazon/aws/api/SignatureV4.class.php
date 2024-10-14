@@ -57,14 +57,14 @@ class SignatureV4 {
   ): array {
     $requestDate= $this->datetime($time);
 
-    // Step 1: Create a canonical request. The target is expected to be urlencoded!
+    // Create a canonical request using the URI-encoded version of the path
     if ($params) {
       ksort($params);
       $query= http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     } else {
       $query= '';
     }
-    $canonical= "{$method}\n{$target}\n{$query}\n";
+    $canonical= "{$method}\n".strtr(rawurlencode($target), ['%2F' => '/'])."\n{$query}\n";
 
     // Header names must use lowercase characters and must appear in alphabetical order.
     $sorted= [];
