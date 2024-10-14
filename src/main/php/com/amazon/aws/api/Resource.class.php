@@ -74,4 +74,15 @@ class Resource {
       $this->serialize($this->marshalling->marshal($payload), $type)
     );
   }
+
+  /**
+   * Opens a request and returns a `Transfer` instance for writing data to
+   *
+   * @param  string $method
+   * @param  [:string] $headers
+   * @return com.amazon.aws.api.Transfer
+   */
+  public function open(string $method, array $headers) {
+    return $this->endpoint->open($method, $this->target, $headers);
+  }
 }

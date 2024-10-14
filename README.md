@@ -75,7 +75,7 @@ $file= new File('large.txt');
 $file->open(File::READ);
 
 try {
-  $transfer= $s3->open('PUT', 'target/'.$file->filename, [
+  $transfer= $s3->resource('target/{0}', [$file->filename])->open('PUT', [
     'x-amz-content-sha256' => SignatureV4::UNSIGNED, // Or calculate from file
     'Content-Type'         => 'text/plain',
     'Content-Length'       => $file->size(),
