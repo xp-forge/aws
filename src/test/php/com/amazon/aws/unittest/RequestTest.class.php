@@ -77,7 +77,7 @@ class RequestTest {
   #[Test]
   public function json_value() {
     $endpoint= $this->endpoint('apigateway', [
-      '/$default' => [
+      '/%24default' => [
         'HTTP/1.1 200 OK',
         'Content-Type: application/json',
         '',
@@ -129,6 +129,31 @@ class RequestTest {
     ]);
 
     $transfer= $s3->in('eu-central-1')->using('bucket')->open('PUT', '/target/upload.png', [
+      'x-amz-content-sha256' => hash('sha256', $file),
+      'Content-Type'         => 'image/png',
+      'Content-Length'       => strlen($file),
+    ]);
+    $transfer->write($file);
+    $response= $transfer->finish();
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['Content-Length' => '0'], $response->headers());
+    Assert::equals('', $response->content());
+  }
+
+  #[Test]
+  public function transfer_via_resource_path_and_segments() {
+    $file= 'PNG...';
+    $s3= $this->endpoint('s3', [
+      '/target/upload%20file.png' => [
+        'HTTP/1.1 200 OK',
+        'Content-Length: 0',
+        '',
+      ]
+    ]);
+
+    $transfer= $s3->resource('/target/{0}', ['upload file.png'])->open('PUT', [
       'x-amz-content-sha256' => hash('sha256', $file),
       'Content-Type'         => 'image/png',
       'Content-Length'       => strlen($file),

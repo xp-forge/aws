@@ -421,7 +421,7 @@ class CredentialProviderTest {
     $payload= '{"clientId":"client","clientSecret":"secret","refreshToken":"refresh","grantType":"refresh_token"}';
     $cache= $this->ssoCache(-1);
     $conn= new TestConnection(['/?role_name=test&account_id=1234567890' => $this->ssoCredentials()]);
-    $refresh= new TestConnection(['/?data='.$payload => $this->oidcRefresh(true)]);
+    $refresh= new TestConnection(['/?data='.rawurlencode($payload) => $this->oidcRefresh(true)]);
     $provider= new FromSSO(
       'https://example.awsapps.com/start/',
       'eu-central-1',
