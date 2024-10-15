@@ -167,6 +167,8 @@ class ServiceEndpoint implements Traceable {
 
     $host= $this->domain();
     $region= $this->region ?? '*';
+
+    // Combine target parameters with `X-Amz-*` headers used for signature
     $params+= [
       'X-Amz-Algorithm'      => SignatureV4::ALGO,
       'X-Amz-Credential'     => $signature->credential($this->service, $region, $time),
