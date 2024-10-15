@@ -44,6 +44,11 @@ class SignatureV4 {
     return $this->credentials->sessionToken();
   }
 
+  /** URI-encode */
+  public function encoded(string $path): string {
+    return strtr(rawurlencode($path), ['%2F' => '/']);
+  }
+
   /** Returns a signature */
   public function sign(
     string $service,
@@ -64,7 +69,7 @@ class SignatureV4 {
     } else {
       $query= '';
     }
-    $canonical= "{$method}\n".strtr(rawurlencode($target), ['%2F' => '/'])."\n{$query}\n";
+    $canonical= "{$method}\n{$this->encoded($target)}\n{$query}\n";
 
     // Header names must use lowercase characters and must appear in alphabetical order.
     $sorted= [];

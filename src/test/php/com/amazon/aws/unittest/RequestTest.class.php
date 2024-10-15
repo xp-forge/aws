@@ -1,7 +1,7 @@
 <?php namespace com\amazon\aws\unittest;
 
 use com\amazon\aws\api\Resource;
-use com\amazon\aws\{ServiceEndpoint, Credentials};
+use com\amazon\aws\{ServiceEndpoint, Credentials, S3Key};
 use test\{Assert, Test};
 use util\Date;
 
@@ -143,7 +143,7 @@ class RequestTest {
   }
 
   #[Test]
-  public function transfer_via_resource_path_and_segments() {
+  public function transfer_via_s3key_resource() {
     $file= 'PNG...';
     $s3= $this->endpoint('s3', [
       '/target/upload%20file.png' => [
@@ -153,7 +153,7 @@ class RequestTest {
       ]
     ]);
 
-    $transfer= $s3->resource('/target/{0}', ['upload file.png'])->open('PUT', [
+    $transfer= $s3->resource(new S3Key('target', 'upload file.png'))->open('PUT', [
       'x-amz-content-sha256' => hash('sha256', $file),
       'Content-Type'         => 'image/png',
       'Content-Length'       => strlen($file),

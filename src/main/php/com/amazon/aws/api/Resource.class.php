@@ -1,5 +1,6 @@
 <?php namespace com\amazon\aws\api;
 
+use com\amazon\aws\S3Key;
 use lang\{ElementNotFoundException, IllegalArgumentException};
 use text\json\Json;
 use util\data\Marshalling;
@@ -7,13 +8,13 @@ use util\data\Marshalling;
 /** @test com.amazon.aws.unittest.ResourceTest */
 class Resource {
   private $endpoint, $marshalling;
-  public $target= '';
+  public $target;
 
   /**
    * Creates a new resource on a given endpoint
    *
    * @param  com.amazon.aws.ServiceEndpoint $endpoint
-   * @param  string $path
+   * @param  string|com.amazon.aws.S3Key $path
    * @param  string[]|[:string] $segments
    * @param  ?util.data.Marshalling $marshalling
    * @throws lang.ElementNotFoundException
@@ -22,23 +23,28 @@ class Resource {
     $this->endpoint= $endpoint;
     $this->marshalling= $marshalling ?? new Marshalling();
 
-    $l= strlen($path);
-    $offset= 0;
-    do {
-      $b= strcspn($path, '{', $offset);
-      $this->target.= substr($path, $offset, $b);
-      $offset+= $b;
-      if ($offset >= $l) break;
+    if ($path instanceof S3Key) {
+      $this->target= $path;
+    } else {
+      $this->target= '';
+      $l= strlen($path);
+      $offset= 0;
+      do {
+        $b= strcspn($path, '{', $offset);
+        $this->target.= substr($path, $offset, $b);
+        $offset+= $b;
+        if ($offset >= $l) break;
 
-      $e= strcspn($path, '}', $offset);
-      $name= substr($path, $offset + 1, $e - 1);
-      if (null === ($segment= $segments[$name] ?? null)) {
-        throw new ElementNotFoundException('No such segment "'.$name.'"');
-      }
+        $e= strcspn($path, '}', $offset);
+        $name= substr($path, $offset + 1, $e - 1);
+        if (null === ($segment= $segments[$name] ?? null)) {
+          throw new ElementNotFoundException('No such segment "'.$name.'"');
+        }
 
-      $this->target.= $segment;
-      $offset+= $e + 1;
-    } while ($offset < $l);
+        $this->target.= rawurlencode($segment);
+        $offset+= $e + 1;
+      } while ($offset < $l);
+    }
   }
 
   /**

@@ -128,12 +128,13 @@ class ServiceEndpoint implements Traceable {
   }
 
   /**
-   * Returns a new resource consisting of path including
-   * optional placeholders and replacement segments.
+   * Returns a new resource consisting of path including optional placeholders
+   * and replacement segments.
    * 
+   * @param  string|com.amazon.aws.S3Key $path
    * @throws lang.ElementNotFoundException
    */
-  public function resource(string $path, array $segments= []): Resource {
+  public function resource($path, array $segments= []): Resource {
     return new Resource($this, $path, $segments, $this->marshalling);
   }
 
@@ -161,12 +162,12 @@ class ServiceEndpoint implements Traceable {
 
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
-    $link= $this->base.ltrim($target, '/');
+    $path= $this->base.ltrim($target, '/');
     $signature= $signature->sign(
       $this->service,
       $region,
       'GET',
-      $link,
+      $path,
       $params,
       SignatureV4::UNSIGNED,
       ['Host' => $host],
@@ -175,7 +176,7 @@ class ServiceEndpoint implements Traceable {
 
     // Finally, append signature parameter to signed link
     $params['X-Amz-Signature']= $signature['signature'];
-    return "https://{$host}{$link}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+    return "https://{$host}{$path}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
   }
 
   /**
@@ -183,25 +184,30 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.IOException
    */
-  public function open(string $method, string $target, array $headers, $hash= null, $time= null): Transfer {
+  public function open(string $method, $target, array $headers, $hash= null, $time= null): Transfer {
     $signature= new SignatureV4($this->credentials());
-    $host= $this->domain();
-    $target= $this->base.ltrim($target, '/');
-    $conn= ($this->connections)('https://'.$host.$target);
-    $conn->setTrace($this->cat);
 
-    // Parse and separate query string parameters
-    if (false === ($p= strpos($target, '?'))) {
+    // S3 does not double-encode the path component in the canonical request
+    if ($target instanceof S3Key) {
       $params= [];
+      $path= $target->path($this->base);
+      $encoded= $signature->encoded($path);
+    } else if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+      $path= $encoded= $this->base.ltrim($target, '/');
     } else {
       parse_str(substr($target, $p + 1), $params);
-      $target= substr($target, 0, $p);
+      $path= $encoded= $this->base.ltrim(substr($target, 0, $p), '/');
     }
+
+    $host= $this->domain();
+    $conn= ($this->connections)('https://'.$host.$encoded);
+    $conn->setTrace($this->cat);
 
     // Create and sign request
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
-    $request->setTarget(strtr(rawurlencode($target), ['%2F' => '/']));
+    $request->setTarget($encoded);
     $request->addHeaders($headers);
 
     // Compile headers from given host and time including our user agent
@@ -228,7 +234,7 @@ class ServiceEndpoint implements Traceable {
       $this->service,
       $this->region ?? '*',
       $method,
-      $target,
+      $path,
       $params,
       $hash ?? $headers['x-amz-content-sha256'] ?? SignatureV4::NO_PAYLOAD,
       $signed,
@@ -250,7 +256,7 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.IOException
    */
-  public function request(string $method, string $target, array $headers= [], $payload= null, $time= null): Response {
+  public function request(string $method, $target, array $headers= [], $payload= null, $time= null): Response {
     if (null === $payload) {
       $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], SignatureV4::NO_PAYLOAD, $time);
     } else {
