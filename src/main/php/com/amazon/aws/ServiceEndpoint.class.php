@@ -138,22 +138,32 @@ class ServiceEndpoint implements Traceable {
     return new Resource($this, $path, $segments, $this->marshalling);
   }
 
+  /**
+   * Extracts path, encoded and params from a given target. Handles S3 keys, which do
+   * not double-encode the path component in the canonical request.
+   *
+   * @param  com.amazon.aws.api.SignatureV4 $signature
+   * @param  string|com.amazon.aws.S3Key $target
+   * @return var[]
+   */
+  private function target($signature, $target) {
+    if ($target instanceof S3Key) {
+      $path= $target->path($this->base);
+      return [$path, $signature->encoded($path), []];
+    } else if (false === ($p= strpos($target, '?'))) {
+      $path= $path= $this->base.ltrim($target, '/');
+      return [$path, $path, []];
+    } else {
+      parse_str(substr($target, $p + 1), $params);
+      $path= $this->base.ltrim(substr($target, 0, $p), '/');
+      return [$path, $path, $params];
+    }
+  }
+
   /** Signs a given target (optionally including parameters) with a given expiry time */
   public function sign($target, int $expires= 3600, $time= null): string {
     $signature= new SignatureV4($this->credentials());
-
-    // S3 does not double-encode the path component in the canonical request
-    if ($target instanceof S3Key) {
-      $params= [];
-      $path= $target->path($this->base);
-      $encoded= $signature->encoded($path);
-    } else if (false === ($p= strpos($target, '?'))) {
-      $params= [];
-      $path= $encoded= $this->base.ltrim($target, '/');
-    } else {
-      parse_str(substr($target, $p + 1), $params);
-      $path= $encoded= $this->base.ltrim(substr($target, 0, $p), '/');
-    }
+    [$path, $encoded, $params]= $this->target($signature, $target);
 
     $host= $this->domain();
     $region= $this->region ?? '*';
@@ -191,19 +201,7 @@ class ServiceEndpoint implements Traceable {
    */
   public function open(string $method, $target, array $headers, $hash= null, $time= null): Transfer {
     $signature= new SignatureV4($this->credentials());
-
-    // S3 does not double-encode the path component in the canonical request
-    if ($target instanceof S3Key) {
-      $params= [];
-      $path= $target->path($this->base);
-      $encoded= $signature->encoded($path);
-    } else if (false === ($p= strpos($target, '?'))) {
-      $params= [];
-      $path= $encoded= $this->base.ltrim($target, '/');
-    } else {
-      parse_str(substr($target, $p + 1), $params);
-      $path= $encoded= $this->base.ltrim(substr($target, 0, $p), '/');
-    }
+    [$path, $encoded, $params]= $this->target($signature, $target);
 
     $host= $this->domain();
     $conn= ($this->connections)('https://'.$host.$encoded);

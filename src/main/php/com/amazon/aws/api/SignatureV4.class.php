@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\api;
 
-use com\amazon\aws\Credentials;
+use com\amazon\aws\{Credentials, S3Key};
 use peer\http\HttpRequest;
 
 /**
@@ -44,7 +44,7 @@ class SignatureV4 {
     return $this->credentials->sessionToken();
   }
 
-  /** URI-encode */
+  /** URI-encode a given path */
   public function encoded(string $path): string {
     return strtr(rawurlencode($path), ['%2F' => '/']);
   }
