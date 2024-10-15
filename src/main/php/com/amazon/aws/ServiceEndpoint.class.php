@@ -139,18 +139,24 @@ class ServiceEndpoint implements Traceable {
   }
 
   /** Signs a given target (optionally including parameters) with a given expiry time */
-  public function sign(string $target, int $expires= 3600, $time= null): string {
+  public function sign($target, int $expires= 3600, $time= null): string {
     $signature= new SignatureV4($this->credentials());
-    $host= $this->domain();
-    $region= $this->region ?? '*';
 
-    // Combine target parameters with `X-Amz-*` headers used for signature
-    if (false === ($p= strpos($target, '?'))) {
+    // S3 does not double-encode the path component in the canonical request
+    if ($target instanceof S3Key) {
       $params= [];
+      $path= $target->path($this->base);
+      $encoded= $signature->encoded($path);
+    } else if (false === ($p= strpos($target, '?'))) {
+      $params= [];
+      $path= $encoded= $this->base.ltrim($target, '/');
     } else {
       parse_str(substr($target, $p + 1), $params);
-      $target= substr($target, 0, $p);
+      $path= $encoded= $this->base.ltrim(substr($target, 0, $p), '/');
     }
+
+    $host= $this->domain();
+    $region= $this->region ?? '*';
     $params+= [
       'X-Amz-Algorithm'      => SignatureV4::ALGO,
       'X-Amz-Credential'     => $signature->credential($this->service, $region, $time),
@@ -162,7 +168,6 @@ class ServiceEndpoint implements Traceable {
 
     // Next, sign path and query string with the special hash `UNSIGNED-PAYLOAD`,
     // signing only the "Host" header as indicated above.
-    $path= $this->base.ltrim($target, '/');
     $signature= $signature->sign(
       $this->service,
       $region,
@@ -176,7 +181,7 @@ class ServiceEndpoint implements Traceable {
 
     // Finally, append signature parameter to signed link
     $params['X-Amz-Signature']= $signature['signature'];
-    return "https://{$host}{$path}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+    return "https://{$host}{$encoded}?".http_build_query($params, '', '&', PHP_QUERY_RFC3986);
   }
 
   /**
