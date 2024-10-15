@@ -2,7 +2,7 @@
 
 use com\amazon\aws\api\Resource;
 use com\amazon\aws\{ServiceEndpoint, Credentials, S3Key};
-use test\{Assert, Test};
+use test\{Assert, Test, Values};
 use util\Date;
 
 class RequestTest {
@@ -142,18 +142,18 @@ class RequestTest {
     Assert::equals('', $response->content());
   }
 
-  #[Test]
-  public function transfer_via_s3key_resource() {
+  #[Test, Values(['with space.png', 'ümläut.png', 'encoded+char.png'])]
+  public function transfer_via_s3key_resource($filename) {
     $file= 'PNG...';
     $s3= $this->endpoint('s3', [
-      '/target/upload%20file.png' => [
+      '/target/'.rawurlencode($filename) => [
         'HTTP/1.1 200 OK',
         'Content-Length: 0',
         '',
       ]
     ]);
 
-    $transfer= $s3->resource(new S3Key('target', 'upload file.png'))->open('PUT', [
+    $transfer= $s3->resource(new S3Key('target', $filename))->open('PUT', [
       'x-amz-content-sha256' => hash('sha256', $file),
       'Content-Type'         => 'image/png',
       'Content-Length'       => strlen($file),
