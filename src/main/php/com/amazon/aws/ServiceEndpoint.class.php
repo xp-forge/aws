@@ -163,7 +163,7 @@ class ServiceEndpoint implements Traceable {
   /** Signs a given target (optionally including parameters) with a given expiry time */
   public function sign($target, int $expires= 3600, $time= null): string {
     $signature= new SignatureV4($this->credentials());
-    [$path, $encoded, $params]= $this->target($signature, $target);
+    list($path, $encoded, $params)= $this->target($signature, $target);
 
     $host= $this->domain();
     $region= $this->region ?? '*';
@@ -201,7 +201,7 @@ class ServiceEndpoint implements Traceable {
    */
   public function open(string $method, $target, array $headers, $hash= null, $time= null): Transfer {
     $signature= new SignatureV4($this->credentials());
-    [$path, $encoded, $params]= $this->target($signature, $target);
+    list($path, $encoded, $params)= $this->target($signature, $target);
 
     $host= $this->domain();
     $conn= ($this->connections)('https://'.$host.$encoded);
