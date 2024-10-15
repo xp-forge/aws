@@ -3,7 +3,7 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
-## 2.7.0 / ????-??-??
+## 2.7.0 / 2024-10-15
 
 * Merged PR #21: Add `com.amazon.aws.S3Key` implementation to construct
   S3 paths, supporting arbitrary characters in file names.
