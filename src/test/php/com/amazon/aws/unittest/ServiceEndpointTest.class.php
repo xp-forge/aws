@@ -2,7 +2,7 @@
 
 use com\amazon\aws\api\Resource;
 use com\amazon\aws\credentials\FromGiven;
-use com\amazon\aws\{ServiceEndpoint, Credentials, CredentialProvider};
+use com\amazon\aws\{ServiceEndpoint, Credentials, CredentialProvider, S3Key};
 use lang\IllegalArgumentException;
 use test\{Assert, Before, Expect, Test, Values};
 
@@ -147,6 +147,26 @@ class ServiceEndpointTest {
       '&X-Amz-Security-Token=session'.
       '&X-Amz-SignedHeaders=host'.
       '&X-Amz-Signature=589d505a193a066ed7c7aaef1d1abdeba57ec01d7f0e0326fc54711597ed8119',
+      $uri
+    );
+  }
+
+  #[Test]
+  public function sign_link_with_s3key() {
+    $uri= (new ServiceEndpoint('s3', $this->credentials))
+      ->using('bucket')
+      ->sign(new S3Key('folder', 'über test.txt'), 3600, strtotime('20230314T231444Z'))
+    ;
+
+    Assert::equals(
+      'https://bucket.s3.amazonaws.com/folder/%C3%BCber%20test.txt'.
+      '?X-Amz-Algorithm=AWS4-HMAC-SHA256'.
+      '&X-Amz-Credential=key%2F20230314%2F%2A%2Fs3%2Faws4_request'.
+      '&X-Amz-Date=20230314T231444Z'.
+      '&X-Amz-Expires=3600'.
+      '&X-Amz-Security-Token=session'.
+      '&X-Amz-SignedHeaders=host'.
+      '&X-Amz-Signature=529b41315ab05acbeb3c594181de0c65657ec67c4d013a7c78c3977a1ac180b9',
       $uri
     );
   }

@@ -44,6 +44,11 @@ class SignatureV4 {
     return $this->credentials->sessionToken();
   }
 
+  /** URI-encode a given path */
+  public function encoded(string $path): string {
+    return strtr(rawurlencode($path), ['%2F' => '/']);
+  }
+
   /** Returns a signature */
   public function sign(
     string $service,
@@ -57,14 +62,14 @@ class SignatureV4 {
   ): array {
     $requestDate= $this->datetime($time);
 
-    // Create a canonical request using the URI-encoded version of the path
+    // Step 1: Create a canonical request using the URI-encoded version of the path
     if ($params) {
       ksort($params);
       $query= http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     } else {
       $query= '';
     }
-    $canonical= "{$method}\n".strtr(rawurlencode($target), ['%2F' => '/'])."\n{$query}\n";
+    $canonical= "{$method}\n{$this->encoded($target)}\n{$query}\n";
 
     // Header names must use lowercase characters and must appear in alphabetical order.
     $sorted= [];

@@ -62,7 +62,7 @@ Streaming uploads to S3
 
 ```php
 use com\amazon\aws\api\SignatureV4;
-use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
+use com\amazon\aws\{ServiceEndpoint, CredentialProvider, S3Key};
 use io\File;
 use util\cmd\Console;
 
@@ -75,7 +75,7 @@ $file= new File('large.txt');
 $file->open(File::READ);
 
 try {
-  $transfer= $s3->resource('target/{0}', [$file->filename])->open('PUT', [
+  $transfer= $s3->resource(new S3Key('target', $file->filename))->open('PUT', [
     'x-amz-content-sha256' => SignatureV4::UNSIGNED, // Or calculate from file
     'Content-Type'         => 'text/plain',
     'Content-Length'       => $file->size(),
