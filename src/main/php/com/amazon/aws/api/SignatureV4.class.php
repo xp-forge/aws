@@ -1,6 +1,6 @@
 <?php namespace com\amazon\aws\api;
 
-use com\amazon\aws\{Credentials, S3Key};
+use com\amazon\aws\Credentials;
 use peer\http\HttpRequest;
 
 /**
