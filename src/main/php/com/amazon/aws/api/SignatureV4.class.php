@@ -62,7 +62,7 @@ class SignatureV4 {
   ): array {
     $requestDate= $this->datetime($time);
 
-    // Create a canonical request using the URI-encoded version of the path
+    // Step 1: Create a canonical request using the URI-encoded version of the path
     if ($params) {
       ksort($params);
       $query= http_build_query($params, '', '&', PHP_QUERY_RFC3986);
