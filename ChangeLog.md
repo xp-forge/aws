@@ -5,6 +5,9 @@ AWS Core change log
 
 ## 2.7.0 / ????-??-??
 
+* Merged PR #21: Add `com.amazon.aws.S3Key` implementation to construct
+  S3 paths, supporting arbitrary characters in file names.
+  (@thekid)
 * Merged PR #20: Add Resource::open() method to make URL creation simpler
   (@thekid)
 * Fixed signing when URL contains encoded fragments; e.g. when uploading
