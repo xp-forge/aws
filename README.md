@@ -59,6 +59,7 @@ Console::writeLine($link);
 
 Streaming uploads to S3
 -----------------------
+S3 doesn't double-encode its paths when signing them (see https://github.com/aws/aws-sdk-php/pull/633), pass `S3Key` instances to support arbitrary filenames:
 
 ```php
 use com\amazon\aws\api\SignatureV4;

@@ -142,6 +142,7 @@ class ServiceEndpoint implements Traceable {
    * Extracts path, encoded and params from a given target. Handles S3 keys, which do
    * not double-encode the path component in the canonical request.
    *
+   * @see    https://github.com/aws/aws-sdk-php/pull/633
    * @param  com.amazon.aws.api.SignatureV4 $signature
    * @param  string|com.amazon.aws.S3Key $target
    * @return var[]
