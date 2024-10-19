@@ -43,6 +43,7 @@ See https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.htm
 
 Sharing a S3 resource
 ---------------------
+The following creates a pre-signed link which is valid for 3 minutes:
 
 ```php
 use com\amazon\aws\{ServiceEndpoint, CredentialProvider};
@@ -72,7 +73,7 @@ $s3= (new ServiceEndpoint('s3', CredentialProvider::default()))
   ->using('my-bucket')
 ;
 
-$file= new File('large.txt');
+$file= new File($argv[1]);
 $file->open(File::READ);
 
 try {
