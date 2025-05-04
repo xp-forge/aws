@@ -73,7 +73,7 @@ class FromConfig extends Provider {
    * @return ?com.amazon.aws.FromSSO
    */
   public function sso($section= null) {
-    $section ?? $section= $this->load();
+    $section??= $this->load();
 
     if (($session= $section['sso_session'] ?? null) && ($sso= $this->sections["sso-session {$session}"] ?? null)) {
       return new FromSSO(

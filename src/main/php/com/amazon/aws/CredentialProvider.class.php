@@ -34,7 +34,7 @@ final class CredentialProvider extends Provider {
   public static function throwing(): Provider {
     static $throwing= null;
 
-    return $throwing ?? $throwing= new class() extends Provider {
+    return $throwing??= new class() extends Provider {
       public function credentials() {
         throw new NoSuchElementException('None of the credential providers returned credentials');
       }
@@ -45,7 +45,7 @@ final class CredentialProvider extends Provider {
   public static function none(): Provider {
     static $none= null;
 
-    return $none ?? $none= new class() extends Provider {
+    return $none??= new class() extends Provider {
       public function credentials() {
         return null;
       }
