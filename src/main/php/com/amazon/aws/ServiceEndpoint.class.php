@@ -44,7 +44,7 @@ class ServiceEndpoint implements Traceable {
       php_uname('r'),
       PHP_VERSION
     );
-    $this->connections= function($uri) { return new HttpConnection($uri); };
+    $this->connections= fn($uri) => new HttpConnection($uri);
     $this->marshalling= new Marshalling();
   }
 

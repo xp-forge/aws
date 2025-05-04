@@ -10,7 +10,7 @@ class RequestSigningTest {
   private function execute($handler, $payload= null, $headers= [], $session= null) {
     $headers+= ['User-Agent' => 'xp-aws/1.0.0 OS/Test/1.0 lang/php/8.3.0'];
     return (new ServiceEndpoint('test', new Credentials('key', 'secret', $session)))
-      ->connecting(function($uri) use($handler) { return new TestConnection(['/' => $handler]); })
+      ->connecting(fn($uri) => new TestConnection(['/' => $handler]))
       ->request('GET', '/', $headers, $payload, self::TEST_TIME)
     ;
   }
