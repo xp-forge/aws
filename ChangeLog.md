@@ -3,6 +3,8 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+* Added PHP 8.6 to the test matrix - @thekid
+
 ## 3.0.0 / 2025-05-04
 
 * **Heads up:** Dropped support for PHP < 7.4, see xp-framework/rfc#343
