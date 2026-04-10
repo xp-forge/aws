@@ -41,7 +41,13 @@ class RequestTest {
         'Content-Type: application/vnd.amazon.eventstream',
         'x-amzn-code-interpreter-session-id: '.$request->headers['x-amzn-code-interpreter-session-id'][0],
         '',
-        '...'
+        '...',
+      ],
+      'PUT /code-interpreters/test.v1/sessions/stop?sessionId='.self::SESSION => [
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/json',
+        '',
+        '{"sessionId": "'.self::SESSION.'"}',
       ],
     ]);
   }
@@ -76,8 +82,7 @@ class RequestTest {
   }
 
   #[Test]
-  public function start_agentcode_session() {
-    $sessions= ['x-amzn-code-interpreter-session-id' => self::SESSION];
+  public function start_agentcore_session() {
     $start= [
       'name'                  => 'code-sesion-6100',
       'description'           => 'Test session',
@@ -86,6 +91,18 @@ class RequestTest {
     $response= $this->agentcore()
       ->resource('/code-interpreters/test.v1/sessions/start')
       ->transmit($start, 'application/json', 'PUT')
+    ;
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['sessionId' => self::SESSION], $response->value());
+  }
+
+  #[Test]
+  public function stop_agentcore_session() {
+    $response= $this->agentcore()
+      ->resource('/code-interpreters/test.v1/sessions/stop?sessionId='.self::SESSION)
+      ->transmit((object)[], 'application/json', 'PUT')
     ;
 
     Assert::equals(200, $response->status());

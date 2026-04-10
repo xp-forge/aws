@@ -213,7 +213,10 @@ class ServiceEndpoint implements Traceable {
     // Create and sign request
     $request= $conn->create(new HttpRequest());
     $request->setMethod($method);
-    $request->setTarget($encoded);
+    $request->setTarget($params
+      ? $encoded.'?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986)
+      : $encoded
+    );
     $request->addHeaders($headers);
 
     // Compile headers from given host and time including our user agent
