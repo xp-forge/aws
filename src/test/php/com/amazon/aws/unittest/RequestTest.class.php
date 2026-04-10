@@ -6,6 +6,7 @@ use test\{Assert, Test, Values};
 use util\Date;
 
 class RequestTest {
+  const SESSION= '01KNW5AXNPC8SK9GSXY6D10YKE';
 
   /** Returns a testing endpoint */
   private function endpoint(string $service, array $responses): ServiceEndpoint {
@@ -22,6 +23,25 @@ class RequestTest {
         'Content-Type: text/plain',
         '',
         'Testing local'
+      ],
+    ]);
+  }
+
+  /** Returns a testing endpoint with a Bedrock AgentCore fixture */
+  private function agentcore(): ServiceEndpoint {
+    return $this->endpoint('bedrock-agentcore', [
+      'PUT /code-interpreters/test.v1/sessions/start' => [
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/json',
+        '',
+        '{"sessionId": "'.self::SESSION.'"}',
+      ],
+      'POST /code-interpreters/test.v1/tools/invoke' => fn($request) => [
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/vnd.amazon.eventstream',
+        'x-amzn-code-interpreter-session-id: '.$request->headers['x-amzn-code-interpreter-session-id'][0],
+        '',
+        '...'
       ],
     ]);
   }
@@ -56,24 +76,37 @@ class RequestTest {
   }
 
   #[Test]
+  public function start_agentcode_session() {
+    $sessions= ['x-amzn-code-interpreter-session-id' => self::SESSION];
+    $start= [
+      'name'                  => 'code-sesion-6100',
+      'description'           => 'Test session',
+      'sessionTimeoutSeconds' => 60,
+    ];
+    $response= $this->agentcore()
+      ->resource('/code-interpreters/test.v1/sessions/start')
+      ->transmit($start, 'application/json', 'PUT')
+    ;
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['sessionId' => self::SESSION], $response->value());
+  }
+
+  #[Test]
   public function invoke_agentcore_interpreter() {
-    $sessions= ['x-amzn-code-interpreter-session-id' => '01KNW5AXNPC8SK9GSXY6D10YKE'];
+    $sessions= ['x-amzn-code-interpreter-session-id' => self::SESSION];
     $call= [
       'id'        => '1',
       'name'      => 'executeCode',
       'arguments' => ['language' => 'test', 'code' => 'assert 1 == 1'],
     ];
 
-    $api= $this->endpoint('bedrock-agentcore', [
-      'POST /code-interpreters/test.v1/tools/invoke' => fn($request) => [
-        'HTTP/1.1 200 OK',
-        'Content-Type: application/vnd.amazon.eventstream',
-        'x-amzn-code-interpreter-session-id: '.$request->headers['x-amzn-code-interpreter-session-id'][0],
-        '',
-        '...'
-      ],
-    ]);
-    $response= $api->resource('/code-interpreters/test.v1/tools/invoke')->with($sessions)->transmit($call) ;
+    $response= $this->agentcore()
+      ->resource('/code-interpreters/test.v1/tools/invoke')
+      ->with($sessions)
+      ->transmit($call)
+    ;
 
     Assert::equals(200, $response->status());
     Assert::equals('OK', $response->message());
