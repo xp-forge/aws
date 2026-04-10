@@ -3,6 +3,9 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.1.0 / 2026-04-10
+
+* Fixed handling of request parameters passed in resource URI - @thekid
 * Added optional parameter *method* to `Resource::transmit()` - @thekid
 * Made it possible to pass HTTP headers to API resources - @thekid
 * Added PHP 8.6 to the test matrix - @thekid
