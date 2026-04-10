@@ -8,6 +8,7 @@ use util\data\Marshalling;
 /** @test com.amazon.aws.unittest.ResourceTest */
 class Resource {
   private $endpoint, $marshalling;
+  private $headers= [];
   public $target;
 
   /**
@@ -48,6 +49,19 @@ class Resource {
   }
 
   /**
+   * Adds headers
+   *
+   * @param  [:string] $headers
+   * @return self
+   */
+  public function with($headers) {
+    foreach ($headers as $name => $value) {
+      $this->headers[$name]= $value;
+    }
+    return $this;
+  }
+
+  /**
    * Serialize a given payload
    *
    * @param  var $payload
@@ -64,19 +78,20 @@ class Resource {
   }
 
   /**
-   * Transmits a given payload using a HTTP `POST` request using the
-   * given mime type, which defaults to `application/json`. Returns
-   * the API response.
+   * Transmits a given payload using a HTTP request using the given
+   * media type, which defaults to `application/json`. The HTTP method
+   * defaults to `POST`. Returns the API response.
    *
    * @param  var $payload
    * @param  string $type
+   * @param  string $method
    * @return com.amazon.aws.api.Response
    */
-  public function transmit($payload, $type= 'application/json') {
+  public function transmit($payload, $type= 'application/json', $method= 'POST') {
     return $this->endpoint->request(
-      'POST',
+      $method,
       $this->target,
-      ['Content-Type' => $type],
+      ['Content-Type' => $type] + $this->headers,
       $this->serialize($this->marshalling->marshal($payload), $type)
     );
   }
@@ -88,7 +103,7 @@ class Resource {
    * @param  [:string] $headers
    * @return com.amazon.aws.api.Transfer
    */
-  public function open(string $method, array $headers) {
-    return $this->endpoint->open($method, $this->target, $headers);
+  public function open(string $method, array $headers= []) {
+    return $this->endpoint->open($method, $this->target, $headers + $this->headers);
   }
 }

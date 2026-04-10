@@ -25,7 +25,10 @@ class TestConnection extends HttpConnection {
 
   public function send(HttpRequest $request) {
     $target= $request->target();
-    $response= $this->responses[$target] ?? $this->error($target);
+    $response= $this->responses[$request->method.' '.$target]
+      ?? $this->responses[$target]
+      ?? $this->error($target)
+    ;
 
     return new HttpResponse(new MemoryInputStream(implode(
       "\r\n",

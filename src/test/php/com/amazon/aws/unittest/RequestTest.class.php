@@ -56,6 +56,31 @@ class RequestTest {
   }
 
   #[Test]
+  public function invoke_agentcore_interpreter() {
+    $sessions= ['x-amzn-code-interpreter-session-id' => '01KNW5AXNPC8SK9GSXY6D10YKE'];
+    $call= [
+      'id'        => '1',
+      'name'      => 'executeCode',
+      'arguments' => ['language' => 'test', 'code' => 'assert 1 == 1'],
+    ];
+
+    $api= $this->endpoint('bedrock-agentcore', [
+      'POST /code-interpreters/test.v1/tools/invoke' => fn($request) => [
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/vnd.amazon.eventstream',
+        'x-amzn-code-interpreter-session-id: '.$request->headers['x-amzn-code-interpreter-session-id'][0],
+        '',
+        '...'
+      ],
+    ]);
+    $response= $api->resource('/code-interpreters/test.v1/tools/invoke')->with($sessions)->transmit($call) ;
+
+    Assert::equals(200, $response->status());
+    Assert::equals('OK', $response->message());
+    Assert::equals(['Content-Type' => 'application/vnd.amazon.eventstream'] + $sessions, $response->headers());
+  }
+
+  #[Test]
   public function not_found() {
     $response= $this->endpoint('testing', [])->resource('/gone')->transmit([]);
 
