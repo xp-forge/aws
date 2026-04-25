@@ -34,6 +34,15 @@ class Credentials implements Value {
   /** @return ?int */
   public function expiration() { return $this->expiration; }
 
+  /** @return [:string] */
+  public function environment() {
+    return [
+      'AWS_ACCESS_KEY_ID'     => $this->accessKey,
+      'AWS_SECRET_ACCESS_KEY' => $this->secretKey->reveal(),
+      'AWS_SESSION_TOKEN'     => $this->sessionToken,
+    ];
+  }
+
   /** @return string */
   public function hashCode() {
     return 'C'.sha1($this->accessKey.$this->secretKey->reveal().$this->sessionToken);

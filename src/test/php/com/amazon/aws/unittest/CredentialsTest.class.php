@@ -28,6 +28,14 @@ class CredentialsTest {
   }
 
   #[Test]
+  public function environment() {
+    Assert::equals(
+      ['AWS_ACCESS_KEY_ID' => 'key', 'AWS_SECRET_ACCESS_KEY' => 'secret', 'AWS_SESSION_TOKEN' => 'session'],
+      (new Credentials('key', 'secret', 'session'))->environment()
+    );
+  }
+
+  #[Test]
   public function compare_to_itself() {
     $credentials= new Credentials('key', 'secret');
     Assert::equals(0, $credentials->compareTo($credentials));
