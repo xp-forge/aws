@@ -3,7 +3,7 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
-## 3.2.0 / 2026-04-23
+## 3.2.0 / 2026-04-25
 
 * Added `com.amazon.aws.Credentials::environment()` - @thekid
 * Made compatible with `xp-framework/http` version 11.0 - @thekid
