@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.2.0 / 2026-04-23
+
+* Made compatible with `xp-framework/http` version 11.0 - @thekid
+
 ## 3.1.0 / 2026-04-10
 
 * Fixed handling of request parameters passed in resource URI - @thekid
