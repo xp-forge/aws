@@ -12,6 +12,11 @@ class IniFile {
 
   /** @return ?int */
   public function modified() {
+
+    // Workaround for https://bugs.php.net/bug.php?id=72666 prior to PHP 8.4.5
+    // This should really be fixed in XP core, though!
+    PHP_VERSION_ID >= 80405 || clearstatcache($this->file->getURI());
+
     return $this->file->exists() ? $this->file->lastModified() : null;
   }
 
