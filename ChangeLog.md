@@ -3,6 +3,12 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.2.1 / 2026-06-11
+
+* Fixed the `FromConfig` provider from refreshing on every access via
+  *credentials()* accessor
+  (@thekid)
+
 ## 3.2.0 / 2026-04-25
 
 * Added `com.amazon.aws.Credentials::environment()` - @thekid

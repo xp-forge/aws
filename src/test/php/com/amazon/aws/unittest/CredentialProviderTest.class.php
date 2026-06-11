@@ -246,13 +246,34 @@ class CredentialProviderTest {
     $provider= new FromConfig($file, self::NON_EXISTANT, 'default');
     $first= $provider->credentials();
 
+    // Change file and use a modification timestamp which is guaranteed
+    // to be different from the original independent of test timing.
     $file->containing(
       "[default]\n".
       "aws_access_key_id = modifed\n".
       "aws_secret_access_key = secret\n"
     );
+    $file->touch($file->lastModified() - 1);
     $second= $provider->credentials();
 
+    Assert::notEquals($first, $second);
+  }
+
+  #[Test]
+  public function from_config_cache_checks_for_deletion() {
+    $file= (new TempFile())->containing(
+      "[default]\n".
+      "aws_access_key_id = key\n".
+      "aws_secret_access_key = secret\n"
+    );
+    $provider= new FromConfig($file, self::NON_EXISTANT, 'default');
+    $first= $provider->credentials();
+
+    // Delete the file, forcing a reload and subsequent nulling
+    $file->unlink();
+    $second= $provider->credentials();
+
+    Assert::null($second);
     Assert::notEquals($first, $second);
   }
 

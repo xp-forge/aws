@@ -13,9 +13,9 @@ use util\Secret;
  * @test  com.amazon.aws.unittest.CredentialProviderTest
  */
 class FromConfig extends Provider {
-  private $config, $credentials, $profile;
+  private $config, $shared, $profile;
   private $modified= null;
-  private $sections= null;
+  private $provider= null;
 
   /**
    * Creates a new configuration source. Checks the `AWS_SHARED_CREDENTIALS_FILE`
@@ -32,7 +32,7 @@ class FromConfig extends Provider {
       ?? Environment::variable('AWS_CONFIG_FILE', null)
       ?? new Path($this->homeDir(), '.aws', 'config')
     );
-    $this->credentials= new IniFile($credentials
+    $this->shared= new IniFile($credentials
       ?? Environment::variable('AWS_SHARED_CREDENTIALS_FILE', null)
       ?? new Path($this->homeDir(), '.aws', 'credentials')
     );
@@ -44,39 +44,32 @@ class FromConfig extends Provider {
     return Environment::variable(['HOME', 'USERPROFILE', 'LAMBDA_TASK_ROOT'], DIRECTORY_SEPARATOR);
   }
 
-  /** @return ?[:string] */
+  /** @return void */
   private function load() {
-    $modified= max($this->config->modified(), $this->credentials->modified());
-    if (null === $modified) return null;
+    $modified= [$this->config->modified(), $this->shared->modified()];
+    if ($modified === $this->modified) return;
 
-    // Merge configuration and memoize along with modification date
-    if ($modified >= $this->modified) {
-      $this->modified= $modified;
-      $this->sections= $this->config->sections();
-      foreach ($this->credentials->sections() as $profile => $values) {
-        if (isset($config[$profile])) {
-          $this->sections[$profile]+= $values;
-        } else {
-          $this->sections[$profile]= $values;
-        }
+    // If either of the above change, merge configuration and memoize along with modification date
+    $this->modified= $modified;
+    $this->provider= null;
+    $sections= $this->config->sections();
+    foreach ($this->shared->sections() as $profile => $values) {
+      if (isset($sections[$profile])) {
+        $sections[$profile]+= $values;
+      } else {
+        $sections[$profile]= $values;
       }
     }
 
-    return $this->sections['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? null;
-  }
-
-  /**
-   * Returns the SSO provider, supporting config with and without SSO session.
-   *
-   * @see    https://github.com/xp-forge/aws/issues/14
-   * @param  ?[:string] $section
-   * @return ?com.amazon.aws.FromSSO
-   */
-  public function sso($section= null) {
-    $section??= $this->load();
-
-    if (($session= $section['sso_session'] ?? null) && ($sso= $this->sections["sso-session {$session}"] ?? null)) {
-      return new FromSSO(
+    $section= $sections['default' === $this->profile ? 'default' : "profile {$this->profile}"] ?? [];
+    if ($accessKey= $section['aws_access_key_id'] ?? null) {
+      $this->provider= new FromGiven(new Credentials(
+        $accessKey,
+        new Secret($section['aws_secret_access_key']),
+        $section['aws_session_token'] ?? null
+      ));
+    } else if (($session= $section['sso_session'] ?? null) && ($sso= $sections["sso-session {$session}"] ?? null)) {
+      $this->provider= new FromSSO(
         $sso['sso_start_url'],
         $sso['sso_region'] ?? $section['region'] ?? Environment::variable('AWS_REGION'),
         $section['sso_account_id'],
@@ -84,7 +77,7 @@ class FromConfig extends Provider {
         $session
       );
     } else if ($url= $section['sso_start_url'] ?? null) {
-      return new FromSSO(
+      $this->provider= new FromSSO(
         $url,
         $section['sso_region'] ?? $section['region'] ?? Environment::variable('AWS_REGION'),
         $section['sso_account_id'],
@@ -92,27 +85,22 @@ class FromConfig extends Provider {
         null
       );
     }
+  }
 
-    return null;
+  /**
+   * Returns the SSO provider, supporting config with and without SSO session.
+   *
+   * @see    https://github.com/xp-forge/aws/issues/14
+   * @return ?com.amazon.aws.FromSSO
+   */
+  public function sso() {
+    $this->load();
+    return $this->provider instanceof FromSSO ? $this->provider : null;
   }
 
   /** @return ?com.amazon.aws.Credentials */
   public function credentials() {
-    $section= $this->load();
-
-    // Edge case: Neither file exists or a non-existant profile is referenced
-    if (null === $section) return null;
-
-    if ($accessKey= $section['aws_access_key_id'] ?? null) {
-      return new Credentials(
-        $accessKey,
-        new Secret($section['aws_secret_access_key']),
-        $section['aws_session_token'] ?? null
-      );
-    } else if ($ssoProvider= $this->sso($section)) {
-      return $ssoProvider->credentials();
-    }
-
-    return null;
+    $this->load();
+    return $this->provider ? $this->provider->credentials() : null;
   }
 }
