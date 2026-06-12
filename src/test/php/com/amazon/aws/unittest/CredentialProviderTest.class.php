@@ -401,9 +401,7 @@ class CredentialProviderTest {
       $provider= new FromEcs($conn);
       $provider->credentials();
 
-      Assert::throws(IllegalStateException::class, function() use($provider) {
-        $provider->credentials();
-      });
+      Assert::throws(IllegalStateException::class, fn() => $provider->credentials());
     });
   }
 
@@ -476,9 +474,7 @@ class CredentialProviderTest {
       $conn,
       $refresh
     );
-    Assert::throws(AuthenticationException::class, function() use($provider) {
-      $provider->credentials();
-    });
+    Assert::throws(AuthenticationException::class, fn() => $provider->credentials());
   }
 
   #[Test]
@@ -527,9 +523,7 @@ class CredentialProviderTest {
 
   #[Test]
   public function chain_throwing() {
-    Assert::throws(NoSuchElementException::class, function() {
-      CredentialProvider::throwing()->credentials();
-    });
+    Assert::throws(NoSuchElementException::class, fn () => CredentialProvider::throwing()->credentials());
   }
 
   #[Test]

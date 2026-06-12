@@ -17,28 +17,19 @@ class RequestSigningTest {
 
   #[Test]
   public function host() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Host'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Host'][0]];
     Assert::equals('test.amazonaws.com', $this->execute($handler)->content());
   }
 
   #[Test]
   public function amz_date() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['X-Amz-Date'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['X-Amz-Date'][0]];
     Assert::equals('20230314T231444Z', $this->execute($handler)->content());
   }
 
   #[Test]
   public function amz_user_agent() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['X-Amz-User-Agent'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['X-Amz-User-Agent'][0]];
     Assert::matches(
       '/xp-aws\/[0-9.]+ OS\/.+\/.+ lang\/php\/[0-9.]+/',
       $this->execute($handler)->content()
@@ -47,10 +38,7 @@ class RequestSigningTest {
 
   #[Test]
   public function authorization() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
     Assert::equals(
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=host;x-amz-date;x-amz-user-agent, '.
@@ -61,10 +49,7 @@ class RequestSigningTest {
 
   #[Test]
   public function authorization_with_payload() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
     Assert::equals(
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=host;x-amz-date;x-amz-user-agent, '.
@@ -75,10 +60,7 @@ class RequestSigningTest {
 
   #[Test]
   public function authorization_includes_x_amz_header() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
     Assert::equals(
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=host;x-amz-copy-source;x-amz-date;x-amz-user-agent, '.
@@ -89,10 +71,7 @@ class RequestSigningTest {
 
   #[Test]
   public function authorization_includes_content_type() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
     Assert::equals(
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=content-type;host;x-amz-date;x-amz-user-agent, '.
@@ -103,10 +82,7 @@ class RequestSigningTest {
 
   #[Test]
   public function authorization_with_session() {
-    $handler= function($request) {
-      return ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
-    };
-
+    $handler= fn($request) => ['HTTP/1.1 200 OK', '', $request->headers['Authorization'][0]];
     Assert::equals(
       'AWS4-HMAC-SHA256 Credential=key/20230314/*/test/aws4_request, '.
       'SignedHeaders=host;x-amz-date;x-amz-security-token;x-amz-user-agent, '.
