@@ -3,6 +3,13 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.3.0 / 2026-06-21
+
+* Merged PR #22: Refactor I/O exceptions, dropping XP 10 support in the
+  doing. See xp-framework/core#363 for a write-up on the reason behind
+  this and the plan to move forward.
+  (@thekid)
+
 ## 3.2.1 / 2026-06-12
 
 * Fixed the `FromConfig` provider from refreshing on every access via
