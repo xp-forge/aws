@@ -200,7 +200,7 @@ class ServiceEndpoint implements Traceable {
   /**
    * Opens a request and returns a `Transfer` instance for writing data to
    *
-   * @throws io.IOException
+   * @throws io.OperationFailed
    */
   public function open(string $method, $target, array $headers, $hash= null, $time= null): Transfer {
     $signature= new SignatureV4($this->credentials());
@@ -263,7 +263,7 @@ class ServiceEndpoint implements Traceable {
   /**
    * Sends a request and returns the response
    *
-   * @throws io.IOException
+   * @throws io.OperationFailed
    */
   public function request(string $method, $target, array $headers= [], $payload= null, $time= null): Response {
     if (null === $payload) {
