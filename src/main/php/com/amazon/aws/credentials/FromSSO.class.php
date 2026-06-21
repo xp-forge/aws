@@ -1,7 +1,7 @@
 <?php namespace com\amazon\aws\credentials;
 
 use com\amazon\aws\Credentials;
-use io\{File, Path, IOException};
+use io\{File, Path, OperationFailed};
 use lang\{Environment, IllegalStateException};
 use peer\AuthenticationException;
 use peer\http\{HttpConnection, RequestData};
@@ -71,8 +71,8 @@ class FromSSO extends Provider {
         'X-Amz-User-Agent' => $this->userAgent,
         'Content-Type'     => self::JSON,
       ]);
-    } catch (IOException $t) {
-      throw new IllegalStateException("OIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $t);
+    } catch (OperationFailed $e) {
+      throw new IllegalStateException("OIDC refreshing via {$this->refresh->getUrl()->getURL()} failed", $e);
     }
 
     if (200 !== $res->statusCode()) {
