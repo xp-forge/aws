@@ -2,9 +2,9 @@
 
 use com\amazon\aws\credentials\{FromGiven, FromEnvironment, FromConfig, FromEcs, FromSSO};
 use com\amazon\aws\{Credentials, CredentialProvider};
-use io\{TempFile, IOException};
+use io\TempFile;
 use lang\IllegalStateException;
-use peer\AuthenticationException;
+use peer\{AuthenticationException, ConnectException};
 use test\{Assert, Expect, Test, Values};
 use text\json\{Json, FileInput};
 use util\NoSuchElementException;
@@ -370,7 +370,7 @@ class CredentialProviderTest {
   public function ecs_api_failing_raises_exception() {
     with (new Exported(['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' => '/get-credentials']), function() {
       $conn= new TestConnection(['/get-credentials' => function($req) {
-        throw new IOException('Connection failed');
+        throw new ConnectException('Connection failed');
       }]);
       (new FromEcs($conn))->credentials();
     });
