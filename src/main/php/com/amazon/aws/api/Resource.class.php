@@ -9,6 +9,7 @@ use util\data\Marshalling;
 class Resource {
   private $endpoint, $marshalling;
   private $headers= [];
+  public $timeouts= [null, null];
   public $target;
 
   /**
@@ -46,6 +47,18 @@ class Resource {
         $offset+= $e + 1;
       } while ($offset < $l);
     }
+  }
+
+  /**
+   * Sets timeouts for reading and connecting
+   *
+   * @param  ?float $read
+   * @param  ?float $connect
+   * @return self
+   */
+  public function waiting($read= null, $connect= null) {
+    $this->timeouts= [$read, $connect];
+    return $this;
   }
 
   /**
@@ -92,7 +105,9 @@ class Resource {
       $method,
       $this->target,
       ['Content-Type' => $type] + $this->headers,
-      $this->serialize($this->marshalling->marshal($payload), $type)
+      $this->serialize($this->marshalling->marshal($payload), $type),
+      null,
+      $this->timeouts
     );
   }
 
@@ -104,6 +119,13 @@ class Resource {
    * @return com.amazon.aws.api.Transfer
    */
   public function open(string $method, array $headers= []) {
-    return $this->endpoint->open($method, $this->target, $headers + $this->headers);
+    return $this->endpoint->open(
+      $method,
+      $this->target,
+      $headers + $this->headers,
+      null, // hash
+      null, // time
+      $this->timeouts
+    );
   }
 }

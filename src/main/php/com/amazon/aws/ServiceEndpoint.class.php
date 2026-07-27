@@ -202,13 +202,17 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.OperationFailed
    */
-  public function open(string $method, $target, array $headers, $hash= null, $time= null): Transfer {
+  public function open(string $method, $target, array $headers, $hash= null, $time= null, $timeouts= [null, null]): Transfer {
     $signature= new SignatureV4($this->credentials());
     list($path, $encoded, $params)= $this->target($signature, $target);
 
     $host= $this->domain();
     $conn= ($this->connections)('https://'.$host.$encoded);
     $conn->setTrace($this->cat);
+
+    // Use request timeouts if supplied, otherwise use those of the connection
+    isset($timeouts[0]) && $conn->setTimeout($timeouts[0]);
+    isset($timeouts[1]) && $conn->setConnectTimeout($timeouts[1]);
 
     // Create and sign request
     $request= $conn->create(new HttpRequest());
@@ -265,16 +269,17 @@ class ServiceEndpoint implements Traceable {
    *
    * @throws io.OperationFailed
    */
-  public function request(string $method, $target, array $headers= [], $payload= null, $time= null): Response {
+  public function request(string $method, $target, array $headers= [], $payload= null, $time= null, $timeouts= [null, null]): Response {
     if (null === $payload) {
-      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], SignatureV4::NO_PAYLOAD, $time);
+      $transfer= $this->open($method, $target, $headers + ['Content-Length' => 0], SignatureV4::NO_PAYLOAD, $time, $timeouts);
     } else {
       $transfer= $this->open(
         $method,
         $target,
         $headers + ['Content-Length' => strlen($payload)],
         hash(SignatureV4::HASH, $payload),
-        $time
+        $time,
+        $timeouts
       );
       $transfer->write($payload);
     }
