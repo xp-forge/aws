@@ -3,6 +3,11 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.4.0 / 2026-07-27
+
+* Merged PR #23: Add `Resource::waiting($read, $connect)` to set timeouts
+  (@thekid)
+
 ## 3.3.0 / 2026-06-21
 
 * Merged PR #22: Refactor I/O exceptions, dropping XP 10 support in the
