@@ -47,4 +47,14 @@ class ResourceTest {
   public function serialize_unknown() {
     (new Resource($this->endpoint, '/'))->serialize(null, 'unknown/mime');
   }
+
+  #[Test]
+  public function default_timeouts() {
+    Assert::equals([null, null], (new Resource($this->endpoint, '/'))->timeouts);
+  }
+
+  #[Test]
+  public function override_timeouts() {
+    Assert::equals([30, 4], (new Resource($this->endpoint, '/'))->waiting(30, 4)->timeouts);
+  }
 }
