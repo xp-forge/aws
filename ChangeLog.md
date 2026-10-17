@@ -3,6 +3,10 @@ AWS Core change log
 
 ## ?.?.? / ????-??-??
 
+## 3.5.0 / 2026-10-17
+
+* Added compatibility with `xp-forge/json` version 7.0+ - @thekid
+
 ## 3.4.0 / 2026-07-27
 
 * Merged PR #23: Add `Resource::waiting($read, $connect)` to set timeouts
